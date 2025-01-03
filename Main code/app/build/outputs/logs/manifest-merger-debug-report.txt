@@ -1,0 +1,397 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:17:1-68:12
+INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:17:1-68:12
+INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:17:1-68:12
+INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:17:1-68:12
+MERGED from [androidx.databinding:databinding-adapters:7.1.2] /home/larissa/.gradle/caches/transforms-3/4480499d4ec690562a5b91caa17fb6d0/transformed/databinding-adapters-7.1.2/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.databinding:databinding-ktx:7.1.2] /home/larissa/.gradle/caches/transforms-3/cf437df6352c371d949b8bfcea65c661/transformed/jetified-databinding-ktx-7.1.2/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.databinding:databinding-runtime:7.1.2] /home/larissa/.gradle/caches/transforms-3/0c44952525acac0824656a77886351fa/transformed/databinding-runtime-7.1.2/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.databinding:viewbinding:7.1.2] /home/larissa/.gradle/caches/transforms-3/16a8720920d1b4e78e6c26186b357943/transformed/jetified-viewbinding-7.1.2/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.navigation:navigation-fragment-ktx:2.5.3] /home/larissa/.gradle/caches/transforms-3/68ecaf7c5e1f7c0240de828014fc88a7/transformed/navigation-fragment-ktx-2.5.3/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.navigation:navigation-fragment:2.5.3] /home/larissa/.gradle/caches/transforms-3/6357f0968eb83156f51da2443dfb7590/transformed/navigation-fragment-2.5.3/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.fragment:fragment-ktx:1.5.4] /home/larissa/.gradle/caches/transforms-3/581214fd47fff349d4698f9b5b1df844/transformed/jetified-fragment-ktx-1.5.4/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.navigation:navigation-ui-ktx:2.5.3] /home/larissa/.gradle/caches/transforms-3/54ba19980a09f99b49860b048ae435bb/transformed/navigation-ui-ktx-2.5.3/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.navigation:navigation-ui:2.5.3] /home/larissa/.gradle/caches/transforms-3/ac03b8855b61b84c441a9bc9de646449/transformed/navigation-ui-2.5.3/AndroidManifest.xml:17:1-24:12
+MERGED from [com.google.android.material:material:1.4.0-beta01] /home/larissa/.gradle/caches/transforms-3/8461daf7ffb46e427e2d8a2581baab60/transformed/material-1.4.0-beta01/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.constraintlayout:constraintlayout:2.0.4] /home/larissa/.gradle/caches/transforms-3/24956cc327f530edf45656cc039d8e3c/transformed/constraintlayout-2.0.4/AndroidManifest.xml:2:1-11:12
+MERGED from [androidx.camera:camera-view:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/288465533047924f029ae10fd07d514e/transformed/jetified-camera-view-1.1.0-beta03/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.appcompat:appcompat:1.3.1] /home/larissa/.gradle/caches/transforms-3/e2529e5b28497c034d6ae27e7c9e0829/transformed/appcompat-1.3.1/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.lifecycle:lifecycle-extensions:2.2.0] /home/larissa/.gradle/caches/transforms-3/695b96364272608046d7994a2caba09a/transformed/lifecycle-extensions-2.2.0/AndroidManifest.xml:17:1-27:12
+MERGED from [androidx.viewpager2:viewpager2:1.0.0] /home/larissa/.gradle/caches/transforms-3/a0bf4c32d4c579e64a5409d5fd1377d6/transformed/jetified-viewpager2-1.0.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.fragment:fragment:1.5.4] /home/larissa/.gradle/caches/transforms-3/0a641299af38ce5bd7778b67b76d19d4/transformed/fragment-1.5.4/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.navigation:navigation-runtime-ktx:2.5.3] /home/larissa/.gradle/caches/transforms-3/794e5d3cf9534454a6d90ba6089f06bb/transformed/navigation-runtime-ktx-2.5.3/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.navigation:navigation-runtime:2.5.3] /home/larissa/.gradle/caches/transforms-3/20245ddda112891e692b58c558915fa7/transformed/navigation-runtime-2.5.3/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.activity:activity-ktx:1.5.1] /home/larissa/.gradle/caches/transforms-3/1408bd822b630f090f506a81c1935e9f/transformed/jetified-activity-ktx-1.5.1/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.navigation:navigation-common-ktx:2.5.3] /home/larissa/.gradle/caches/transforms-3/42bdb8d6c8eae7e0c0676c39cebe35e9/transformed/navigation-common-ktx-2.5.3/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.navigation:navigation-common:2.5.3] /home/larissa/.gradle/caches/transforms-3/9c92c3d371893165b0ee362d616c15b0/transformed/navigation-common-2.5.3/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.activity:activity:1.5.1] /home/larissa/.gradle/caches/transforms-3/4cd2b7b3cd7c6afd3d4f001c538db16e/transformed/jetified-activity-1.5.1/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1] /home/larissa/.gradle/caches/transforms-3/6c70a09b4f1e6e59b6c22e3cf0369336/transformed/jetified-lifecycle-viewmodel-ktx-2.5.1/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.dynamicanimation:dynamicanimation:1.0.0] /home/larissa/.gradle/caches/transforms-3/b5bae92aa30095c91d21cf6c51e07614/transformed/dynamicanimation-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.legacy:legacy-support-core-utils:1.0.0] /home/larissa/.gradle/caches/transforms-3/81d8a0ca3dcdcc851abe0174260778e9/transformed/legacy-support-core-utils-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.loader:loader:1.0.0] /home/larissa/.gradle/caches/transforms-3/b63daa76818a7c89f6f102b33262b244/transformed/loader-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.5.1] /home/larissa/.gradle/caches/transforms-3/de9f2ce17a2551303fdd58ac0e4cc773/transformed/lifecycle-viewmodel-2.5.1/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.5.1] /home/larissa/.gradle/caches/transforms-3/62a627460ec6c214bb56f99cc165945f/transformed/jetified-lifecycle-viewmodel-savedstate-2.5.1/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.core:core-ktx:1.6.0] /home/larissa/.gradle/caches/transforms-3/c61c226a781f861a7529c7f418a14e85/transformed/jetified-core-ktx-1.6.0/AndroidManifest.xml:2:1-9:12
+MERGED from [androidx.slidingpanelayout:slidingpanelayout:1.2.0] /home/larissa/.gradle/caches/transforms-3/ec65275b15e1f9ffcf8b6f18415573f2/transformed/slidingpanelayout-1.2.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.window:window:1.0.0] /home/larissa/.gradle/caches/transforms-3/003dc1b563dd58bb3a6cf9e9568f2fa0/transformed/jetified-window-1.0.0/AndroidManifest.xml:17:1-33:12
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.5.1] /home/larissa/.gradle/caches/transforms-3/6c7c9d64075b5aa99e446d50e21b3e85/transformed/jetified-lifecycle-runtime-ktx-2.5.1/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.localbroadcastmanager:localbroadcastmanager:1.0.0] /home/larissa/.gradle/caches/transforms-3/71bdce56b7edb4116bf7fda03484ffd3/transformed/localbroadcastmanager-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.cardview:cardview:1.0.0] /home/larissa/.gradle/caches/transforms-3/2badf1554dc123591f3359bdfa234cf1/transformed/cardview-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [com.github.PhilJay:MPAndroidChart:v3.1.0] /home/larissa/.gradle/caches/transforms-3/cb4999d7eeb55f9a139e51e2f573ab55/transformed/jetified-MPAndroidChart-v3.1.0/AndroidManifest.xml:2:1-20:12
+MERGED from [androidx.camera:camera-camera2:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/3f75425b218b03084dd6742964910f87/transformed/jetified-camera-camera2-1.1.0-beta03/AndroidManifest.xml:17:1-38:12
+MERGED from [androidx.camera:camera-lifecycle:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/340c5a68bb2be2fae14bcd79e3daff01/transformed/jetified-camera-lifecycle-1.1.0-beta03/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.camera:camera-core:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/0d48a122cbfaf517cf19871323074c9f/transformed/jetified-camera-core-1.1.0-beta03/AndroidManifest.xml:17:1-38:12
+MERGED from [org.tensorflow:tensorflow-lite-task-vision:0.4.0] /home/larissa/.gradle/caches/transforms-3/9724d3d710337bbeed5012e5d0650fbe/transformed/jetified-tensorflow-lite-task-vision-0.4.0/AndroidManifest.xml:2:1-9:12
+MERGED from [org.tensorflow:tensorflow-lite-gpu-delegate-plugin:0.4.0] /home/larissa/.gradle/caches/transforms-3/25c2d218d0563e8aea0032953b234503/transformed/jetified-tensorflow-lite-gpu-delegate-plugin-0.4.0/AndroidManifest.xml:2:1-6:12
+MERGED from [org.tensorflow:tensorflow-lite-gpu:2.9.0] /home/larissa/.gradle/caches/transforms-3/abe622a63c1f7ee3346e170f8558bc5a/transformed/jetified-tensorflow-lite-gpu-2.9.0/AndroidManifest.xml:2:1-12:12
+MERGED from [androidx.cursoradapter:cursoradapter:1.0.0] /home/larissa/.gradle/caches/transforms-3/0e2dfbb3152059296aec9149c54b51e1/transformed/cursoradapter-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.appcompat:appcompat-resources:1.3.1] /home/larissa/.gradle/caches/transforms-3/6d343737c9f49e7f6a191e3848d5f8e6/transformed/jetified-appcompat-resources-1.3.1/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] /home/larissa/.gradle/caches/transforms-3/357096c6920475e441fe85dda1e82bb3/transformed/vectordrawable-animated-1.1.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] /home/larissa/.gradle/caches/transforms-3/844d1fa95c689d50ff148a4c02106cce/transformed/vectordrawable-1.1.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.drawerlayout:drawerlayout:1.1.1] /home/larissa/.gradle/caches/transforms-3/cafc92ea83be622f7e89aff261db697b/transformed/drawerlayout-1.1.1/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.coordinatorlayout:coordinatorlayout:1.1.0] /home/larissa/.gradle/caches/transforms-3/d1d45693b5f36a7b01b705eca648bb85/transformed/coordinatorlayout-1.1.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.viewpager:viewpager:1.0.0] /home/larissa/.gradle/caches/transforms-3/5ea5610a00e7b5d9f442d7c158d5c729/transformed/viewpager-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.recyclerview:recyclerview:1.1.0] /home/larissa/.gradle/caches/transforms-3/0a864edd74c79a57208615e5226b1557/transformed/recyclerview-1.1.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.customview:customview:1.1.0] /home/larissa/.gradle/caches/transforms-3/760909854d3d24fa93790a0d43fbf7b1/transformed/customview-1.1.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.transition:transition:1.4.1] /home/larissa/.gradle/caches/transforms-3/bb0dcd264b8279eb45ae2b386c9ae759/transformed/transition-1.4.1/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.core:core:1.8.0] /home/larissa/.gradle/caches/transforms-3/6fb4bc3b196a58e37177243683bb603c/transformed/core-1.8.0/AndroidManifest.xml:17:1-26:12
+MERGED from [androidx.exifinterface:exifinterface:1.3.2] /home/larissa/.gradle/caches/transforms-3/2c03c8a20768a39c4135bb2ab2b36a7b/transformed/exifinterface-1.3.2/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /home/larissa/.gradle/caches/transforms-3/5eb79f6faaf625c2647b160d554a94a0/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:17:1-27:12
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.2.0] /home/larissa/.gradle/caches/transforms-3/e342689dcd2bf4a4d95b6ce82aedbba6/transformed/lifecycle-livedata-2.2.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.lifecycle:lifecycle-livedata-core-ktx:2.5.1] /home/larissa/.gradle/caches/transforms-3/90262711314a79b2e4b078aea456a887/transformed/jetified-lifecycle-livedata-core-ktx-2.5.1/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.5.1] /home/larissa/.gradle/caches/transforms-3/d74899fdc620f59267b3815e82183de9/transformed/lifecycle-livedata-core-2.5.1/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.lifecycle:lifecycle-process:2.2.0] /home/larissa/.gradle/caches/transforms-3/5637bee3ce00df4d7288774732567969/transformed/jetified-lifecycle-process-2.2.0/AndroidManifest.xml:17:1-32:12
+MERGED from [androidx.lifecycle:lifecycle-service:2.2.0] /home/larissa/.gradle/caches/transforms-3/b7996ebddfece0eb1edff939921508bc/transformed/jetified-lifecycle-service-2.2.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.5.1] /home/larissa/.gradle/caches/transforms-3/3b132a7c3146448463e193aa7faae8ec/transformed/lifecycle-runtime-2.5.1/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.arch.core:core-runtime:2.1.0] /home/larissa/.gradle/caches/transforms-3/8301781a2e473e980743aed7e0db97ba/transformed/core-runtime-2.1.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.savedstate:savedstate-ktx:1.2.0] /home/larissa/.gradle/caches/transforms-3/6cc7b3b451080744d6a507f5e3541e31/transformed/jetified-savedstate-ktx-1.2.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.savedstate:savedstate:1.2.0] /home/larissa/.gradle/caches/transforms-3/026da8c3472ffad8fa3daf3c017866df/transformed/jetified-savedstate-1.2.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.interpolator:interpolator:1.0.0] /home/larissa/.gradle/caches/transforms-3/675a4f698039d4e87b5d1c346bc83ee8/transformed/interpolator-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.tracing:tracing:1.0.0] /home/larissa/.gradle/caches/transforms-3/832f911c12138f7d5c423f229c733bbb/transformed/jetified-tracing-1.0.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.documentfile:documentfile:1.0.0] /home/larissa/.gradle/caches/transforms-3/a9c494ab238f6102b2cf79b3ce8e811b/transformed/documentfile-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.print:print:1.0.0] /home/larissa/.gradle/caches/transforms-3/501213cd4570106614e114000d2e8c0f/transformed/print-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.annotation:annotation-experimental:1.1.0] /home/larissa/.gradle/caches/transforms-3/02533e6149cb75ba871e16a7c52c8a27/transformed/jetified-annotation-experimental-1.1.0/AndroidManifest.xml:17:1-24:12
+MERGED from [org.tensorflow:tensorflow-lite-task-base:0.4.0] /home/larissa/.gradle/caches/transforms-3/337b0241de5779448928db17a78b6f57/transformed/jetified-tensorflow-lite-task-base-0.4.0/AndroidManifest.xml:2:1-6:12
+MERGED from [org.tensorflow:tensorflow-lite-support-api:0.4.0] /home/larissa/.gradle/caches/transforms-3/c8ba58fefab4c67f613572dbd0c878e0/transformed/jetified-tensorflow-lite-support-api-0.4.0/AndroidManifest.xml:2:1-5:12
+MERGED from [org.tensorflow:tensorflow-lite-api:2.8.0] /home/larissa/.gradle/caches/transforms-3/a222743b391cc43a7e3afd99ce53527c/transformed/jetified-tensorflow-lite-api-2.8.0/AndroidManifest.xml:2:1-12:12
+MERGED from [com.google.android.odml:image:1.0.0-beta1] /home/larissa/.gradle/caches/transforms-3/73eb6e232bb45010a5a033ec329af805/transformed/jetified-image-1.0.0-beta1/AndroidManifest.xml:2:1-9:12
+INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:17:1-68:12
+INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:17:1-68:12
+INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:17:1-68:12
+	package
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:21:5-59
+		INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml
+		INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml
+	android:versionName
+		INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:17:1-68:12
+		INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml
+	xmlns:tools
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:20:5-51
+	xmlns:dist
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:19:5-61
+	android:versionCode
+		INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:17:1-68:12
+		INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:18:5-63
+uses-permission#android.permission.WRITE_EXTERNAL_STORAGE
+ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:24:5-81
+	android:name
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:24:22-78
+dist:module
+ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:28:5-40
+	dist:instant
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:28:18-37
+uses-feature#android.hardware.camera
+ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:31:5-60
+	android:name
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:31:19-57
+uses-permission#android.permission.CAMERA
+ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:34:5-65
+	android:name
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:34:22-62
+application
+ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:36:5-66:19
+MERGED from [com.google.android.material:material:1.4.0-beta01] /home/larissa/.gradle/caches/transforms-3/8461daf7ffb46e427e2d8a2581baab60/transformed/material-1.4.0-beta01/AndroidManifest.xml:22:5-20
+MERGED from [com.google.android.material:material:1.4.0-beta01] /home/larissa/.gradle/caches/transforms-3/8461daf7ffb46e427e2d8a2581baab60/transformed/material-1.4.0-beta01/AndroidManifest.xml:22:5-20
+MERGED from [androidx.constraintlayout:constraintlayout:2.0.4] /home/larissa/.gradle/caches/transforms-3/24956cc327f530edf45656cc039d8e3c/transformed/constraintlayout-2.0.4/AndroidManifest.xml:9:5-20
+MERGED from [androidx.constraintlayout:constraintlayout:2.0.4] /home/larissa/.gradle/caches/transforms-3/24956cc327f530edf45656cc039d8e3c/transformed/constraintlayout-2.0.4/AndroidManifest.xml:9:5-20
+MERGED from [androidx.lifecycle:lifecycle-extensions:2.2.0] /home/larissa/.gradle/caches/transforms-3/695b96364272608046d7994a2caba09a/transformed/lifecycle-extensions-2.2.0/AndroidManifest.xml:24:5-25:19
+MERGED from [androidx.lifecycle:lifecycle-extensions:2.2.0] /home/larissa/.gradle/caches/transforms-3/695b96364272608046d7994a2caba09a/transformed/lifecycle-extensions-2.2.0/AndroidManifest.xml:24:5-25:19
+MERGED from [androidx.window:window:1.0.0] /home/larissa/.gradle/caches/transforms-3/003dc1b563dd58bb3a6cf9e9568f2fa0/transformed/jetified-window-1.0.0/AndroidManifest.xml:24:5-31:19
+MERGED from [androidx.window:window:1.0.0] /home/larissa/.gradle/caches/transforms-3/003dc1b563dd58bb3a6cf9e9568f2fa0/transformed/jetified-window-1.0.0/AndroidManifest.xml:24:5-31:19
+MERGED from [androidx.camera:camera-camera2:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/3f75425b218b03084dd6742964910f87/transformed/jetified-camera-camera2-1.1.0-beta03/AndroidManifest.xml:25:5-36:19
+MERGED from [androidx.camera:camera-camera2:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/3f75425b218b03084dd6742964910f87/transformed/jetified-camera-camera2-1.1.0-beta03/AndroidManifest.xml:25:5-36:19
+MERGED from [androidx.camera:camera-core:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/0d48a122cbfaf517cf19871323074c9f/transformed/jetified-camera-core-1.1.0-beta03/AndroidManifest.xml:25:5-36:19
+MERGED from [androidx.camera:camera-core:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/0d48a122cbfaf517cf19871323074c9f/transformed/jetified-camera-core-1.1.0-beta03/AndroidManifest.xml:25:5-36:19
+MERGED from [org.tensorflow:tensorflow-lite-gpu-delegate-plugin:0.4.0] /home/larissa/.gradle/caches/transforms-3/25c2d218d0563e8aea0032953b234503/transformed/jetified-tensorflow-lite-gpu-delegate-plugin-0.4.0/AndroidManifest.xml:4:4-5:18
+MERGED from [org.tensorflow:tensorflow-lite-gpu-delegate-plugin:0.4.0] /home/larissa/.gradle/caches/transforms-3/25c2d218d0563e8aea0032953b234503/transformed/jetified-tensorflow-lite-gpu-delegate-plugin-0.4.0/AndroidManifest.xml:4:4-5:18
+MERGED from [org.tensorflow:tensorflow-lite-gpu:2.9.0] /home/larissa/.gradle/caches/transforms-3/abe622a63c1f7ee3346e170f8558bc5a/transformed/jetified-tensorflow-lite-gpu-2.9.0/AndroidManifest.xml:10:5-20
+MERGED from [org.tensorflow:tensorflow-lite-gpu:2.9.0] /home/larissa/.gradle/caches/transforms-3/abe622a63c1f7ee3346e170f8558bc5a/transformed/jetified-tensorflow-lite-gpu-2.9.0/AndroidManifest.xml:10:5-20
+MERGED from [androidx.core:core:1.8.0] /home/larissa/.gradle/caches/transforms-3/6fb4bc3b196a58e37177243683bb603c/transformed/core-1.8.0/AndroidManifest.xml:24:5-89
+MERGED from [androidx.core:core:1.8.0] /home/larissa/.gradle/caches/transforms-3/6fb4bc3b196a58e37177243683bb603c/transformed/core-1.8.0/AndroidManifest.xml:24:5-89
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /home/larissa/.gradle/caches/transforms-3/5eb79f6faaf625c2647b160d554a94a0/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:24:5-25:19
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /home/larissa/.gradle/caches/transforms-3/5eb79f6faaf625c2647b160d554a94a0/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:24:5-25:19
+MERGED from [androidx.lifecycle:lifecycle-process:2.2.0] /home/larissa/.gradle/caches/transforms-3/5637bee3ce00df4d7288774732567969/transformed/jetified-lifecycle-process-2.2.0/AndroidManifest.xml:24:5-30:19
+MERGED from [androidx.lifecycle:lifecycle-process:2.2.0] /home/larissa/.gradle/caches/transforms-3/5637bee3ce00df4d7288774732567969/transformed/jetified-lifecycle-process-2.2.0/AndroidManifest.xml:24:5-30:19
+MERGED from [org.tensorflow:tensorflow-lite-task-base:0.4.0] /home/larissa/.gradle/caches/transforms-3/337b0241de5779448928db17a78b6f57/transformed/jetified-tensorflow-lite-task-base-0.4.0/AndroidManifest.xml:4:4-5:18
+MERGED from [org.tensorflow:tensorflow-lite-task-base:0.4.0] /home/larissa/.gradle/caches/transforms-3/337b0241de5779448928db17a78b6f57/transformed/jetified-tensorflow-lite-task-base-0.4.0/AndroidManifest.xml:4:4-5:18
+MERGED from [org.tensorflow:tensorflow-lite-api:2.8.0] /home/larissa/.gradle/caches/transforms-3/a222743b391cc43a7e3afd99ce53527c/transformed/jetified-tensorflow-lite-api-2.8.0/AndroidManifest.xml:10:5-20
+MERGED from [org.tensorflow:tensorflow-lite-api:2.8.0] /home/larissa/.gradle/caches/transforms-3/a222743b391cc43a7e3afd99ce53527c/transformed/jetified-tensorflow-lite-api-2.8.0/AndroidManifest.xml:10:5-20
+MERGED from [com.google.android.odml:image:1.0.0-beta1] /home/larissa/.gradle/caches/transforms-3/73eb6e232bb45010a5a033ec329af805/transformed/jetified-image-1.0.0-beta1/AndroidManifest.xml:7:5-20
+MERGED from [com.google.android.odml:image:1.0.0-beta1] /home/larissa/.gradle/caches/transforms-3/73eb6e232bb45010a5a033ec329af805/transformed/jetified-image-1.0.0-beta1/AndroidManifest.xml:7:5-20
+	android:appComponentFactory
+		ADDED from [androidx.core:core:1.8.0] /home/larissa/.gradle/caches/transforms-3/6fb4bc3b196a58e37177243683bb603c/transformed/core-1.8.0/AndroidManifest.xml:24:18-86
+	android:label
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:39:9-41
+	tools:ignore
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:42:9-35
+	android:roundIcon
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:38:9-54
+	android:icon
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:37:9-43
+	android:allowBackup
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:40:9-35
+	android:taskAffinity
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:41:9-32
+activity#org.tensorflow.lite.examples.objectdetection.MainActivity
+ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:44:9-64:20
+	android:clearTaskOnLaunch
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:46:13-45
+	android:exported
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:48:13-36
+	android:resizeableActivity
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:51:13-46
+	android:rotationAnimation
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:50:13-49
+	android:configChanges
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:52:13-91
+	tools:targetApi
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:53:13-32
+	android:icon
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:49:13-47
+	android:theme
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:47:13-44
+	android:name
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:45:13-41
+intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
+ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:56:13-59:29
+action#android.intent.action.MAIN
+ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:57:17-69
+	android:name
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:57:25-66
+category#android.intent.category.LAUNCHER
+ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:58:17-77
+	android:name
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:58:27-74
+meta-data#android.notch_support
+ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:62:13-83
+	android:value
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:62:61-81
+	android:name
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:62:24-60
+uses-sdk
+INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml
+INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml
+MERGED from [androidx.databinding:databinding-adapters:7.1.2] /home/larissa/.gradle/caches/transforms-3/4480499d4ec690562a5b91caa17fb6d0/transformed/databinding-adapters-7.1.2/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.databinding:databinding-adapters:7.1.2] /home/larissa/.gradle/caches/transforms-3/4480499d4ec690562a5b91caa17fb6d0/transformed/databinding-adapters-7.1.2/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.databinding:databinding-ktx:7.1.2] /home/larissa/.gradle/caches/transforms-3/cf437df6352c371d949b8bfcea65c661/transformed/jetified-databinding-ktx-7.1.2/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.databinding:databinding-ktx:7.1.2] /home/larissa/.gradle/caches/transforms-3/cf437df6352c371d949b8bfcea65c661/transformed/jetified-databinding-ktx-7.1.2/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.databinding:databinding-runtime:7.1.2] /home/larissa/.gradle/caches/transforms-3/0c44952525acac0824656a77886351fa/transformed/databinding-runtime-7.1.2/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.databinding:databinding-runtime:7.1.2] /home/larissa/.gradle/caches/transforms-3/0c44952525acac0824656a77886351fa/transformed/databinding-runtime-7.1.2/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.databinding:viewbinding:7.1.2] /home/larissa/.gradle/caches/transforms-3/16a8720920d1b4e78e6c26186b357943/transformed/jetified-viewbinding-7.1.2/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.databinding:viewbinding:7.1.2] /home/larissa/.gradle/caches/transforms-3/16a8720920d1b4e78e6c26186b357943/transformed/jetified-viewbinding-7.1.2/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.navigation:navigation-fragment-ktx:2.5.3] /home/larissa/.gradle/caches/transforms-3/68ecaf7c5e1f7c0240de828014fc88a7/transformed/navigation-fragment-ktx-2.5.3/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.navigation:navigation-fragment-ktx:2.5.3] /home/larissa/.gradle/caches/transforms-3/68ecaf7c5e1f7c0240de828014fc88a7/transformed/navigation-fragment-ktx-2.5.3/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.navigation:navigation-fragment:2.5.3] /home/larissa/.gradle/caches/transforms-3/6357f0968eb83156f51da2443dfb7590/transformed/navigation-fragment-2.5.3/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.navigation:navigation-fragment:2.5.3] /home/larissa/.gradle/caches/transforms-3/6357f0968eb83156f51da2443dfb7590/transformed/navigation-fragment-2.5.3/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.fragment:fragment-ktx:1.5.4] /home/larissa/.gradle/caches/transforms-3/581214fd47fff349d4698f9b5b1df844/transformed/jetified-fragment-ktx-1.5.4/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.fragment:fragment-ktx:1.5.4] /home/larissa/.gradle/caches/transforms-3/581214fd47fff349d4698f9b5b1df844/transformed/jetified-fragment-ktx-1.5.4/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.navigation:navigation-ui-ktx:2.5.3] /home/larissa/.gradle/caches/transforms-3/54ba19980a09f99b49860b048ae435bb/transformed/navigation-ui-ktx-2.5.3/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.navigation:navigation-ui-ktx:2.5.3] /home/larissa/.gradle/caches/transforms-3/54ba19980a09f99b49860b048ae435bb/transformed/navigation-ui-ktx-2.5.3/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.navigation:navigation-ui:2.5.3] /home/larissa/.gradle/caches/transforms-3/ac03b8855b61b84c441a9bc9de646449/transformed/navigation-ui-2.5.3/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.navigation:navigation-ui:2.5.3] /home/larissa/.gradle/caches/transforms-3/ac03b8855b61b84c441a9bc9de646449/transformed/navigation-ui-2.5.3/AndroidManifest.xml:20:5-22:41
+MERGED from [com.google.android.material:material:1.4.0-beta01] /home/larissa/.gradle/caches/transforms-3/8461daf7ffb46e427e2d8a2581baab60/transformed/material-1.4.0-beta01/AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.material:material:1.4.0-beta01] /home/larissa/.gradle/caches/transforms-3/8461daf7ffb46e427e2d8a2581baab60/transformed/material-1.4.0-beta01/AndroidManifest.xml:20:5-44
+MERGED from [androidx.constraintlayout:constraintlayout:2.0.4] /home/larissa/.gradle/caches/transforms-3/24956cc327f530edf45656cc039d8e3c/transformed/constraintlayout-2.0.4/AndroidManifest.xml:5:5-7:41
+MERGED from [androidx.constraintlayout:constraintlayout:2.0.4] /home/larissa/.gradle/caches/transforms-3/24956cc327f530edf45656cc039d8e3c/transformed/constraintlayout-2.0.4/AndroidManifest.xml:5:5-7:41
+MERGED from [androidx.camera:camera-view:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/288465533047924f029ae10fd07d514e/transformed/jetified-camera-view-1.1.0-beta03/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.camera:camera-view:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/288465533047924f029ae10fd07d514e/transformed/jetified-camera-view-1.1.0-beta03/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.appcompat:appcompat:1.3.1] /home/larissa/.gradle/caches/transforms-3/e2529e5b28497c034d6ae27e7c9e0829/transformed/appcompat-1.3.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.appcompat:appcompat:1.3.1] /home/larissa/.gradle/caches/transforms-3/e2529e5b28497c034d6ae27e7c9e0829/transformed/appcompat-1.3.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-extensions:2.2.0] /home/larissa/.gradle/caches/transforms-3/695b96364272608046d7994a2caba09a/transformed/lifecycle-extensions-2.2.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-extensions:2.2.0] /home/larissa/.gradle/caches/transforms-3/695b96364272608046d7994a2caba09a/transformed/lifecycle-extensions-2.2.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.viewpager2:viewpager2:1.0.0] /home/larissa/.gradle/caches/transforms-3/a0bf4c32d4c579e64a5409d5fd1377d6/transformed/jetified-viewpager2-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.viewpager2:viewpager2:1.0.0] /home/larissa/.gradle/caches/transforms-3/a0bf4c32d4c579e64a5409d5fd1377d6/transformed/jetified-viewpager2-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.fragment:fragment:1.5.4] /home/larissa/.gradle/caches/transforms-3/0a641299af38ce5bd7778b67b76d19d4/transformed/fragment-1.5.4/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.fragment:fragment:1.5.4] /home/larissa/.gradle/caches/transforms-3/0a641299af38ce5bd7778b67b76d19d4/transformed/fragment-1.5.4/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.navigation:navigation-runtime-ktx:2.5.3] /home/larissa/.gradle/caches/transforms-3/794e5d3cf9534454a6d90ba6089f06bb/transformed/navigation-runtime-ktx-2.5.3/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.navigation:navigation-runtime-ktx:2.5.3] /home/larissa/.gradle/caches/transforms-3/794e5d3cf9534454a6d90ba6089f06bb/transformed/navigation-runtime-ktx-2.5.3/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.navigation:navigation-runtime:2.5.3] /home/larissa/.gradle/caches/transforms-3/20245ddda112891e692b58c558915fa7/transformed/navigation-runtime-2.5.3/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.navigation:navigation-runtime:2.5.3] /home/larissa/.gradle/caches/transforms-3/20245ddda112891e692b58c558915fa7/transformed/navigation-runtime-2.5.3/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.activity:activity-ktx:1.5.1] /home/larissa/.gradle/caches/transforms-3/1408bd822b630f090f506a81c1935e9f/transformed/jetified-activity-ktx-1.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.activity:activity-ktx:1.5.1] /home/larissa/.gradle/caches/transforms-3/1408bd822b630f090f506a81c1935e9f/transformed/jetified-activity-ktx-1.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.navigation:navigation-common-ktx:2.5.3] /home/larissa/.gradle/caches/transforms-3/42bdb8d6c8eae7e0c0676c39cebe35e9/transformed/navigation-common-ktx-2.5.3/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.navigation:navigation-common-ktx:2.5.3] /home/larissa/.gradle/caches/transforms-3/42bdb8d6c8eae7e0c0676c39cebe35e9/transformed/navigation-common-ktx-2.5.3/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.navigation:navigation-common:2.5.3] /home/larissa/.gradle/caches/transforms-3/9c92c3d371893165b0ee362d616c15b0/transformed/navigation-common-2.5.3/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.navigation:navigation-common:2.5.3] /home/larissa/.gradle/caches/transforms-3/9c92c3d371893165b0ee362d616c15b0/transformed/navigation-common-2.5.3/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.activity:activity:1.5.1] /home/larissa/.gradle/caches/transforms-3/4cd2b7b3cd7c6afd3d4f001c538db16e/transformed/jetified-activity-1.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.activity:activity:1.5.1] /home/larissa/.gradle/caches/transforms-3/4cd2b7b3cd7c6afd3d4f001c538db16e/transformed/jetified-activity-1.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1] /home/larissa/.gradle/caches/transforms-3/6c70a09b4f1e6e59b6c22e3cf0369336/transformed/jetified-lifecycle-viewmodel-ktx-2.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1] /home/larissa/.gradle/caches/transforms-3/6c70a09b4f1e6e59b6c22e3cf0369336/transformed/jetified-lifecycle-viewmodel-ktx-2.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.dynamicanimation:dynamicanimation:1.0.0] /home/larissa/.gradle/caches/transforms-3/b5bae92aa30095c91d21cf6c51e07614/transformed/dynamicanimation-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.dynamicanimation:dynamicanimation:1.0.0] /home/larissa/.gradle/caches/transforms-3/b5bae92aa30095c91d21cf6c51e07614/transformed/dynamicanimation-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.legacy:legacy-support-core-utils:1.0.0] /home/larissa/.gradle/caches/transforms-3/81d8a0ca3dcdcc851abe0174260778e9/transformed/legacy-support-core-utils-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.legacy:legacy-support-core-utils:1.0.0] /home/larissa/.gradle/caches/transforms-3/81d8a0ca3dcdcc851abe0174260778e9/transformed/legacy-support-core-utils-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.loader:loader:1.0.0] /home/larissa/.gradle/caches/transforms-3/b63daa76818a7c89f6f102b33262b244/transformed/loader-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.loader:loader:1.0.0] /home/larissa/.gradle/caches/transforms-3/b63daa76818a7c89f6f102b33262b244/transformed/loader-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.5.1] /home/larissa/.gradle/caches/transforms-3/de9f2ce17a2551303fdd58ac0e4cc773/transformed/lifecycle-viewmodel-2.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.5.1] /home/larissa/.gradle/caches/transforms-3/de9f2ce17a2551303fdd58ac0e4cc773/transformed/lifecycle-viewmodel-2.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.5.1] /home/larissa/.gradle/caches/transforms-3/62a627460ec6c214bb56f99cc165945f/transformed/jetified-lifecycle-viewmodel-savedstate-2.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.5.1] /home/larissa/.gradle/caches/transforms-3/62a627460ec6c214bb56f99cc165945f/transformed/jetified-lifecycle-viewmodel-savedstate-2.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.core:core-ktx:1.6.0] /home/larissa/.gradle/caches/transforms-3/c61c226a781f861a7529c7f418a14e85/transformed/jetified-core-ktx-1.6.0/AndroidManifest.xml:5:5-7:41
+MERGED from [androidx.core:core-ktx:1.6.0] /home/larissa/.gradle/caches/transforms-3/c61c226a781f861a7529c7f418a14e85/transformed/jetified-core-ktx-1.6.0/AndroidManifest.xml:5:5-7:41
+MERGED from [androidx.slidingpanelayout:slidingpanelayout:1.2.0] /home/larissa/.gradle/caches/transforms-3/ec65275b15e1f9ffcf8b6f18415573f2/transformed/slidingpanelayout-1.2.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.slidingpanelayout:slidingpanelayout:1.2.0] /home/larissa/.gradle/caches/transforms-3/ec65275b15e1f9ffcf8b6f18415573f2/transformed/slidingpanelayout-1.2.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.window:window:1.0.0] /home/larissa/.gradle/caches/transforms-3/003dc1b563dd58bb3a6cf9e9568f2fa0/transformed/jetified-window-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.window:window:1.0.0] /home/larissa/.gradle/caches/transforms-3/003dc1b563dd58bb3a6cf9e9568f2fa0/transformed/jetified-window-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.5.1] /home/larissa/.gradle/caches/transforms-3/6c7c9d64075b5aa99e446d50e21b3e85/transformed/jetified-lifecycle-runtime-ktx-2.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.5.1] /home/larissa/.gradle/caches/transforms-3/6c7c9d64075b5aa99e446d50e21b3e85/transformed/jetified-lifecycle-runtime-ktx-2.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.localbroadcastmanager:localbroadcastmanager:1.0.0] /home/larissa/.gradle/caches/transforms-3/71bdce56b7edb4116bf7fda03484ffd3/transformed/localbroadcastmanager-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.localbroadcastmanager:localbroadcastmanager:1.0.0] /home/larissa/.gradle/caches/transforms-3/71bdce56b7edb4116bf7fda03484ffd3/transformed/localbroadcastmanager-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.cardview:cardview:1.0.0] /home/larissa/.gradle/caches/transforms-3/2badf1554dc123591f3359bdfa234cf1/transformed/cardview-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.cardview:cardview:1.0.0] /home/larissa/.gradle/caches/transforms-3/2badf1554dc123591f3359bdfa234cf1/transformed/cardview-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [com.github.PhilJay:MPAndroidChart:v3.1.0] /home/larissa/.gradle/caches/transforms-3/cb4999d7eeb55f9a139e51e2f573ab55/transformed/jetified-MPAndroidChart-v3.1.0/AndroidManifest.xml:16:5-18:41
+MERGED from [com.github.PhilJay:MPAndroidChart:v3.1.0] /home/larissa/.gradle/caches/transforms-3/cb4999d7eeb55f9a139e51e2f573ab55/transformed/jetified-MPAndroidChart-v3.1.0/AndroidManifest.xml:16:5-18:41
+MERGED from [androidx.camera:camera-camera2:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/3f75425b218b03084dd6742964910f87/transformed/jetified-camera-camera2-1.1.0-beta03/AndroidManifest.xml:21:5-23:41
+MERGED from [androidx.camera:camera-camera2:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/3f75425b218b03084dd6742964910f87/transformed/jetified-camera-camera2-1.1.0-beta03/AndroidManifest.xml:21:5-23:41
+MERGED from [androidx.camera:camera-lifecycle:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/340c5a68bb2be2fae14bcd79e3daff01/transformed/jetified-camera-lifecycle-1.1.0-beta03/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.camera:camera-lifecycle:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/340c5a68bb2be2fae14bcd79e3daff01/transformed/jetified-camera-lifecycle-1.1.0-beta03/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.camera:camera-core:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/0d48a122cbfaf517cf19871323074c9f/transformed/jetified-camera-core-1.1.0-beta03/AndroidManifest.xml:21:5-23:41
+MERGED from [androidx.camera:camera-core:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/0d48a122cbfaf517cf19871323074c9f/transformed/jetified-camera-core-1.1.0-beta03/AndroidManifest.xml:21:5-23:41
+MERGED from [org.tensorflow:tensorflow-lite-task-vision:0.4.0] /home/larissa/.gradle/caches/transforms-3/9724d3d710337bbeed5012e5d0650fbe/transformed/jetified-tensorflow-lite-task-vision-0.4.0/AndroidManifest.xml:5:5-7:41
+MERGED from [org.tensorflow:tensorflow-lite-task-vision:0.4.0] /home/larissa/.gradle/caches/transforms-3/9724d3d710337bbeed5012e5d0650fbe/transformed/jetified-tensorflow-lite-task-vision-0.4.0/AndroidManifest.xml:5:5-7:41
+MERGED from [org.tensorflow:tensorflow-lite-gpu:2.9.0] /home/larissa/.gradle/caches/transforms-3/abe622a63c1f7ee3346e170f8558bc5a/transformed/jetified-tensorflow-lite-gpu-2.9.0/AndroidManifest.xml:7:5-8:41
+MERGED from [org.tensorflow:tensorflow-lite-gpu:2.9.0] /home/larissa/.gradle/caches/transforms-3/abe622a63c1f7ee3346e170f8558bc5a/transformed/jetified-tensorflow-lite-gpu-2.9.0/AndroidManifest.xml:7:5-8:41
+MERGED from [androidx.cursoradapter:cursoradapter:1.0.0] /home/larissa/.gradle/caches/transforms-3/0e2dfbb3152059296aec9149c54b51e1/transformed/cursoradapter-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.cursoradapter:cursoradapter:1.0.0] /home/larissa/.gradle/caches/transforms-3/0e2dfbb3152059296aec9149c54b51e1/transformed/cursoradapter-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.appcompat:appcompat-resources:1.3.1] /home/larissa/.gradle/caches/transforms-3/6d343737c9f49e7f6a191e3848d5f8e6/transformed/jetified-appcompat-resources-1.3.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.appcompat:appcompat-resources:1.3.1] /home/larissa/.gradle/caches/transforms-3/6d343737c9f49e7f6a191e3848d5f8e6/transformed/jetified-appcompat-resources-1.3.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] /home/larissa/.gradle/caches/transforms-3/357096c6920475e441fe85dda1e82bb3/transformed/vectordrawable-animated-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] /home/larissa/.gradle/caches/transforms-3/357096c6920475e441fe85dda1e82bb3/transformed/vectordrawable-animated-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] /home/larissa/.gradle/caches/transforms-3/844d1fa95c689d50ff148a4c02106cce/transformed/vectordrawable-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] /home/larissa/.gradle/caches/transforms-3/844d1fa95c689d50ff148a4c02106cce/transformed/vectordrawable-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.drawerlayout:drawerlayout:1.1.1] /home/larissa/.gradle/caches/transforms-3/cafc92ea83be622f7e89aff261db697b/transformed/drawerlayout-1.1.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.drawerlayout:drawerlayout:1.1.1] /home/larissa/.gradle/caches/transforms-3/cafc92ea83be622f7e89aff261db697b/transformed/drawerlayout-1.1.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.coordinatorlayout:coordinatorlayout:1.1.0] /home/larissa/.gradle/caches/transforms-3/d1d45693b5f36a7b01b705eca648bb85/transformed/coordinatorlayout-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.coordinatorlayout:coordinatorlayout:1.1.0] /home/larissa/.gradle/caches/transforms-3/d1d45693b5f36a7b01b705eca648bb85/transformed/coordinatorlayout-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.viewpager:viewpager:1.0.0] /home/larissa/.gradle/caches/transforms-3/5ea5610a00e7b5d9f442d7c158d5c729/transformed/viewpager-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.viewpager:viewpager:1.0.0] /home/larissa/.gradle/caches/transforms-3/5ea5610a00e7b5d9f442d7c158d5c729/transformed/viewpager-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.recyclerview:recyclerview:1.1.0] /home/larissa/.gradle/caches/transforms-3/0a864edd74c79a57208615e5226b1557/transformed/recyclerview-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.recyclerview:recyclerview:1.1.0] /home/larissa/.gradle/caches/transforms-3/0a864edd74c79a57208615e5226b1557/transformed/recyclerview-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.customview:customview:1.1.0] /home/larissa/.gradle/caches/transforms-3/760909854d3d24fa93790a0d43fbf7b1/transformed/customview-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.customview:customview:1.1.0] /home/larissa/.gradle/caches/transforms-3/760909854d3d24fa93790a0d43fbf7b1/transformed/customview-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.transition:transition:1.4.1] /home/larissa/.gradle/caches/transforms-3/bb0dcd264b8279eb45ae2b386c9ae759/transformed/transition-1.4.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.transition:transition:1.4.1] /home/larissa/.gradle/caches/transforms-3/bb0dcd264b8279eb45ae2b386c9ae759/transformed/transition-1.4.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.core:core:1.8.0] /home/larissa/.gradle/caches/transforms-3/6fb4bc3b196a58e37177243683bb603c/transformed/core-1.8.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.core:core:1.8.0] /home/larissa/.gradle/caches/transforms-3/6fb4bc3b196a58e37177243683bb603c/transformed/core-1.8.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.exifinterface:exifinterface:1.3.2] /home/larissa/.gradle/caches/transforms-3/2c03c8a20768a39c4135bb2ab2b36a7b/transformed/exifinterface-1.3.2/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.exifinterface:exifinterface:1.3.2] /home/larissa/.gradle/caches/transforms-3/2c03c8a20768a39c4135bb2ab2b36a7b/transformed/exifinterface-1.3.2/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /home/larissa/.gradle/caches/transforms-3/5eb79f6faaf625c2647b160d554a94a0/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /home/larissa/.gradle/caches/transforms-3/5eb79f6faaf625c2647b160d554a94a0/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.2.0] /home/larissa/.gradle/caches/transforms-3/e342689dcd2bf4a4d95b6ce82aedbba6/transformed/lifecycle-livedata-2.2.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.2.0] /home/larissa/.gradle/caches/transforms-3/e342689dcd2bf4a4d95b6ce82aedbba6/transformed/lifecycle-livedata-2.2.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-livedata-core-ktx:2.5.1] /home/larissa/.gradle/caches/transforms-3/90262711314a79b2e4b078aea456a887/transformed/jetified-lifecycle-livedata-core-ktx-2.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-livedata-core-ktx:2.5.1] /home/larissa/.gradle/caches/transforms-3/90262711314a79b2e4b078aea456a887/transformed/jetified-lifecycle-livedata-core-ktx-2.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.5.1] /home/larissa/.gradle/caches/transforms-3/d74899fdc620f59267b3815e82183de9/transformed/lifecycle-livedata-core-2.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.5.1] /home/larissa/.gradle/caches/transforms-3/d74899fdc620f59267b3815e82183de9/transformed/lifecycle-livedata-core-2.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-process:2.2.0] /home/larissa/.gradle/caches/transforms-3/5637bee3ce00df4d7288774732567969/transformed/jetified-lifecycle-process-2.2.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-process:2.2.0] /home/larissa/.gradle/caches/transforms-3/5637bee3ce00df4d7288774732567969/transformed/jetified-lifecycle-process-2.2.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-service:2.2.0] /home/larissa/.gradle/caches/transforms-3/b7996ebddfece0eb1edff939921508bc/transformed/jetified-lifecycle-service-2.2.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-service:2.2.0] /home/larissa/.gradle/caches/transforms-3/b7996ebddfece0eb1edff939921508bc/transformed/jetified-lifecycle-service-2.2.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.5.1] /home/larissa/.gradle/caches/transforms-3/3b132a7c3146448463e193aa7faae8ec/transformed/lifecycle-runtime-2.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.5.1] /home/larissa/.gradle/caches/transforms-3/3b132a7c3146448463e193aa7faae8ec/transformed/lifecycle-runtime-2.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.arch.core:core-runtime:2.1.0] /home/larissa/.gradle/caches/transforms-3/8301781a2e473e980743aed7e0db97ba/transformed/core-runtime-2.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.arch.core:core-runtime:2.1.0] /home/larissa/.gradle/caches/transforms-3/8301781a2e473e980743aed7e0db97ba/transformed/core-runtime-2.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.savedstate:savedstate-ktx:1.2.0] /home/larissa/.gradle/caches/transforms-3/6cc7b3b451080744d6a507f5e3541e31/transformed/jetified-savedstate-ktx-1.2.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.savedstate:savedstate-ktx:1.2.0] /home/larissa/.gradle/caches/transforms-3/6cc7b3b451080744d6a507f5e3541e31/transformed/jetified-savedstate-ktx-1.2.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.savedstate:savedstate:1.2.0] /home/larissa/.gradle/caches/transforms-3/026da8c3472ffad8fa3daf3c017866df/transformed/jetified-savedstate-1.2.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.savedstate:savedstate:1.2.0] /home/larissa/.gradle/caches/transforms-3/026da8c3472ffad8fa3daf3c017866df/transformed/jetified-savedstate-1.2.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.interpolator:interpolator:1.0.0] /home/larissa/.gradle/caches/transforms-3/675a4f698039d4e87b5d1c346bc83ee8/transformed/interpolator-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.interpolator:interpolator:1.0.0] /home/larissa/.gradle/caches/transforms-3/675a4f698039d4e87b5d1c346bc83ee8/transformed/interpolator-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.tracing:tracing:1.0.0] /home/larissa/.gradle/caches/transforms-3/832f911c12138f7d5c423f229c733bbb/transformed/jetified-tracing-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.tracing:tracing:1.0.0] /home/larissa/.gradle/caches/transforms-3/832f911c12138f7d5c423f229c733bbb/transformed/jetified-tracing-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.documentfile:documentfile:1.0.0] /home/larissa/.gradle/caches/transforms-3/a9c494ab238f6102b2cf79b3ce8e811b/transformed/documentfile-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.documentfile:documentfile:1.0.0] /home/larissa/.gradle/caches/transforms-3/a9c494ab238f6102b2cf79b3ce8e811b/transformed/documentfile-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.print:print:1.0.0] /home/larissa/.gradle/caches/transforms-3/501213cd4570106614e114000d2e8c0f/transformed/print-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.print:print:1.0.0] /home/larissa/.gradle/caches/transforms-3/501213cd4570106614e114000d2e8c0f/transformed/print-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.annotation:annotation-experimental:1.1.0] /home/larissa/.gradle/caches/transforms-3/02533e6149cb75ba871e16a7c52c8a27/transformed/jetified-annotation-experimental-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.annotation:annotation-experimental:1.1.0] /home/larissa/.gradle/caches/transforms-3/02533e6149cb75ba871e16a7c52c8a27/transformed/jetified-annotation-experimental-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [org.tensorflow:tensorflow-lite-support-api:0.4.0] /home/larissa/.gradle/caches/transforms-3/c8ba58fefab4c67f613572dbd0c878e0/transformed/jetified-tensorflow-lite-support-api-0.4.0/AndroidManifest.xml:4:3-71
+MERGED from [org.tensorflow:tensorflow-lite-support-api:0.4.0] /home/larissa/.gradle/caches/transforms-3/c8ba58fefab4c67f613572dbd0c878e0/transformed/jetified-tensorflow-lite-support-api-0.4.0/AndroidManifest.xml:4:3-71
+MERGED from [org.tensorflow:tensorflow-lite-api:2.8.0] /home/larissa/.gradle/caches/transforms-3/a222743b391cc43a7e3afd99ce53527c/transformed/jetified-tensorflow-lite-api-2.8.0/AndroidManifest.xml:7:5-8:41
+MERGED from [org.tensorflow:tensorflow-lite-api:2.8.0] /home/larissa/.gradle/caches/transforms-3/a222743b391cc43a7e3afd99ce53527c/transformed/jetified-tensorflow-lite-api-2.8.0/AndroidManifest.xml:7:5-8:41
+MERGED from [com.google.android.odml:image:1.0.0-beta1] /home/larissa/.gradle/caches/transforms-3/73eb6e232bb45010a5a033ec329af805/transformed/jetified-image-1.0.0-beta1/AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.odml:image:1.0.0-beta1] /home/larissa/.gradle/caches/transforms-3/73eb6e232bb45010a5a033ec329af805/transformed/jetified-image-1.0.0-beta1/AndroidManifest.xml:5:5-44
+INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml
+INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml
+		INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml
+		ADDED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml
+		MERGED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml
+		MERGED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml
+		INJECTED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml
+uses-library#androidx.window.extensions
+ADDED from [androidx.window:window:1.0.0] /home/larissa/.gradle/caches/transforms-3/003dc1b563dd58bb3a6cf9e9568f2fa0/transformed/jetified-window-1.0.0/AndroidManifest.xml:25:9-27:40
+	android:required
+		ADDED from [androidx.window:window:1.0.0] /home/larissa/.gradle/caches/transforms-3/003dc1b563dd58bb3a6cf9e9568f2fa0/transformed/jetified-window-1.0.0/AndroidManifest.xml:27:13-37
+	android:name
+		ADDED from [androidx.window:window:1.0.0] /home/larissa/.gradle/caches/transforms-3/003dc1b563dd58bb3a6cf9e9568f2fa0/transformed/jetified-window-1.0.0/AndroidManifest.xml:26:13-54
+uses-library#androidx.window.sidecar
+ADDED from [androidx.window:window:1.0.0] /home/larissa/.gradle/caches/transforms-3/003dc1b563dd58bb3a6cf9e9568f2fa0/transformed/jetified-window-1.0.0/AndroidManifest.xml:28:9-30:40
+	android:required
+		ADDED from [androidx.window:window:1.0.0] /home/larissa/.gradle/caches/transforms-3/003dc1b563dd58bb3a6cf9e9568f2fa0/transformed/jetified-window-1.0.0/AndroidManifest.xml:30:13-37
+	android:name
+		ADDED from [androidx.window:window:1.0.0] /home/larissa/.gradle/caches/transforms-3/003dc1b563dd58bb3a6cf9e9568f2fa0/transformed/jetified-window-1.0.0/AndroidManifest.xml:29:13-51
+service#androidx.camera.core.impl.MetadataHolderService
+ADDED from [androidx.camera:camera-camera2:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/3f75425b218b03084dd6742964910f87/transformed/jetified-camera-camera2-1.1.0-beta03/AndroidManifest.xml:26:9-35:19
+MERGED from [androidx.camera:camera-core:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/0d48a122cbfaf517cf19871323074c9f/transformed/jetified-camera-core-1.1.0-beta03/AndroidManifest.xml:31:9-35:78
+MERGED from [androidx.camera:camera-core:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/0d48a122cbfaf517cf19871323074c9f/transformed/jetified-camera-core-1.1.0-beta03/AndroidManifest.xml:31:9-35:78
+	tools:node
+		ADDED from [androidx.camera:camera-camera2:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/3f75425b218b03084dd6742964910f87/transformed/jetified-camera-camera2-1.1.0-beta03/AndroidManifest.xml:31:13-31
+	android:enabled
+		ADDED from [androidx.camera:camera-camera2:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/3f75425b218b03084dd6742964910f87/transformed/jetified-camera-camera2-1.1.0-beta03/AndroidManifest.xml:28:13-36
+	android:exported
+		ADDED from [androidx.camera:camera-camera2:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/3f75425b218b03084dd6742964910f87/transformed/jetified-camera-camera2-1.1.0-beta03/AndroidManifest.xml:29:13-37
+	tools:ignore
+		ADDED from [androidx.camera:camera-camera2:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/3f75425b218b03084dd6742964910f87/transformed/jetified-camera-camera2-1.1.0-beta03/AndroidManifest.xml:30:13-75
+	android:name
+		ADDED from [androidx.camera:camera-camera2:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/3f75425b218b03084dd6742964910f87/transformed/jetified-camera-camera2-1.1.0-beta03/AndroidManifest.xml:27:13-75
+meta-data#androidx.camera.core.impl.MetadataHolderService.DEFAULT_CONFIG_PROVIDER
+ADDED from [androidx.camera:camera-camera2:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/3f75425b218b03084dd6742964910f87/transformed/jetified-camera-camera2-1.1.0-beta03/AndroidManifest.xml:32:13-34:89
+	android:value
+		ADDED from [androidx.camera:camera-camera2:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/3f75425b218b03084dd6742964910f87/transformed/jetified-camera-camera2-1.1.0-beta03/AndroidManifest.xml:34:17-86
+	android:name
+		ADDED from [androidx.camera:camera-camera2:1.1.0-beta03] /home/larissa/.gradle/caches/transforms-3/3f75425b218b03084dd6742964910f87/transformed/jetified-camera-camera2-1.1.0-beta03/AndroidManifest.xml:33:17-103
+uses-permission#android.permission.READ_PHONE_STATE
+IMPLIED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:17:1-68:12 reason: tensorflow_lite_support.acceleration.configuration has a targetSdkVersion < 4
+uses-permission#android.permission.READ_EXTERNAL_STORAGE
+IMPLIED from /home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/AndroidManifest.xml:17:1-68:12 reason: tensorflow_lite_support.acceleration.configuration requested WRITE_EXTERNAL_STORAGE
+provider#androidx.lifecycle.ProcessLifecycleOwnerInitializer
+ADDED from [androidx.lifecycle:lifecycle-process:2.2.0] /home/larissa/.gradle/caches/transforms-3/5637bee3ce00df4d7288774732567969/transformed/jetified-lifecycle-process-2.2.0/AndroidManifest.xml:25:9-29:43
+	android:authorities
+		ADDED from [androidx.lifecycle:lifecycle-process:2.2.0] /home/larissa/.gradle/caches/transforms-3/5637bee3ce00df4d7288774732567969/transformed/jetified-lifecycle-process-2.2.0/AndroidManifest.xml:27:13-69
+	android:multiprocess
+		ADDED from [androidx.lifecycle:lifecycle-process:2.2.0] /home/larissa/.gradle/caches/transforms-3/5637bee3ce00df4d7288774732567969/transformed/jetified-lifecycle-process-2.2.0/AndroidManifest.xml:29:13-40
+	android:exported
+		ADDED from [androidx.lifecycle:lifecycle-process:2.2.0] /home/larissa/.gradle/caches/transforms-3/5637bee3ce00df4d7288774732567969/transformed/jetified-lifecycle-process-2.2.0/AndroidManifest.xml:28:13-37
+	android:name
+		ADDED from [androidx.lifecycle:lifecycle-process:2.2.0] /home/larissa/.gradle/caches/transforms-3/5637bee3ce00df4d7288774732567969/transformed/jetified-lifecycle-process-2.2.0/AndroidManifest.xml:26:13-79

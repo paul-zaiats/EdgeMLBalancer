@@ -1,0 +1,1 @@
+[{"navFile":"src/main/res/navigation/nav_graph.xml","javaFiles":["org.tensorflow.lite.examples.objectdetection.fragments.HomeFragmentDirections","org.tensorflow.lite.examples.objectdetection.fragments.CameraFragmentDirections","org.tensorflow.lite.examples.objectdetection.fragments.PermissionsFragmentDirections"]}]

@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "/home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/build/intermediates/incremental/mergeDebugResources/stripped.dir/layout/info_bottom_sheet.xml",
+        "source": "/home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/res/layout/info_bottom_sheet.xml"
+    },
+    {
+        "merged": "/home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/build/intermediates/incremental/mergeDebugResources/stripped.dir/layout/fragment_camera.xml",
+        "source": "/home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/res/layout/fragment_camera.xml"
+    },
+    {
+        "merged": "/home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/build/intermediates/incremental/mergeDebugResources/stripped.dir/layout/activity_main.xml",
+        "source": "/home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/res/layout/activity_main.xml"
+    },
+    {
+        "merged": "/home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/build/intermediates/incremental/mergeDebugResources/stripped.dir/layout/fragment_home.xml",
+        "source": "/home/larissa/Desktop/Larissa/Workshop/CSV/Switching on edge/app/src/main/res/layout/fragment_home.xml"
+    }
+]
