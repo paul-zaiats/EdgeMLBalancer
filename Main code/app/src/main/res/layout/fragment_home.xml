@@ -61,6 +61,12 @@
 
         </androidx.cardview.widget.CardView>
 
+        <Button
+            android:id="@+id/scanImagesButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Scan images" />
+
     </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

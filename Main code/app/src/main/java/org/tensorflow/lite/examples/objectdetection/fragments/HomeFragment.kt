@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import org.tensorflow.lite.examples.objectdetection.CocoHelper
 import org.tensorflow.lite.examples.objectdetection.R
 import org.tensorflow.lite.examples.objectdetection.databinding.FragmentHomeBinding
 
@@ -28,6 +29,10 @@ class HomeFragment : Fragment() {
 
         binding.cameraIcon.setOnClickListener {
             findNavController().navigate(R.id.action_homeFragment_to_cameraFragment)
+        }
+
+        binding.scanImagesButton.setOnClickListener {
+            CocoHelper(requireContext()).scanImages()
         }
     }
 
