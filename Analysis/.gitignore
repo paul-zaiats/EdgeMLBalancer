@@ -1,0 +1,7 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+.idea
+venv
+coco_eval_report.json
+predictions.json
+annotated
+val2017_500
