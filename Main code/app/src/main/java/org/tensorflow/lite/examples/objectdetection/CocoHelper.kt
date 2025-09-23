@@ -1,20 +1,33 @@
 package org.tensorflow.lite.examples.objectdetection
 
 import android.content.Context
-import android.content.res.AssetManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.RectF
 import android.util.Log
+import org.json.JSONArray
+import org.json.JSONObject
 import org.tensorflow.lite.task.vision.detector.Detection
+import java.io.File
+import java.io.FileWriter
+import java.io.IOException
 import kotlin.math.max
 
 class CocoHelper(
     val context: Context
 ) {
-    var objectDetectorHelper = ObjectDetectorHelper(
-        context = context,
-        objectDetectorListener = object : ObjectDetectorHelper.DetectorListener {
+
+    val allDetections = JSONArray()
+    private var logFile: File? = null
+
+    init {
+        createLogFile()
+    }
+
+    private val defaultThreshold = 0.01f
+
+    val objectDetectorHelper = ObjectDetectorHelper(
+        context = context, threshold = 0.01F, maxResults = 100, objectDetectorListener = object : ObjectDetectorHelper.DetectorListener {
             override fun onError(error: String) {
                 Log.e("CocoHelper", "Could not process image, error: $error")
             }
@@ -25,12 +38,29 @@ class CocoHelper(
                 imageHeight: Int,
                 imageWidth: Int
             ) {
-//                        assertNotNull(results)
+                TODO("Not yet implemented")
+            }
+
+            override fun onResults(
+                results: MutableList<Detection>?,
+                inferenceTime: Long,
+                imageHeight: Int,
+                imageWidth: Int,
+                imageId: Int
+            ) {
                 for (result in results!!) {
-//                            assertTrue(result.boundingBox.top <= imageHeight)
-//                            assertTrue(result.boundingBox.bottom <= imageHeight)
-//                            assertTrue(result.boundingBox.left <= imageWidth)
-//                            assertTrue(result.boundingBox.right <= imageWidth)
+                    val maxCategory = result.categories.maxByOrNull { it.score }
+                    if (maxCategory != null) {
+                        val cocoBbox = toCocoBbox(result.boundingBox)
+                        val categoryId = maxCategory.index + 1
+                        val detectionJson = JSONObject().apply {
+                            put("image_id", imageId)
+                            put("category_id", categoryId)
+                            put("bbox", cocoBbox)
+                            put("score", maxCategory.score)
+                        }
+                        allDetections.put(detectionJson)
+                    }
                 }
             }
         })
@@ -41,27 +71,48 @@ class CocoHelper(
     }
 
     // Convert Task Library detection to COCO bbox [x,y,w,h] in pixels
-    fun toCocoBbox(box: RectF): List<Float> {
+    fun toCocoBbox(box: RectF): JSONArray {
         val x = max(0f, box.left)
         val y = max(0f, box.top)
         val w = max(0f, box.width())
         val h = max(0f, box.height())
-        return listOf(x, y, w, h)
+        return JSONArray().put(x).put(y).put(w).put(h)
     }
 
     fun scanImages() {
         context.assets.list("val2017_500")?.forEach {
-            objectDetectorHelper.detect(loadImage("val2017_500/$it"), 0)
+            val imageId = cocoImageIdFromFilename(it)
+            objectDetectorHelper.detect(loadImage("val2017_500/$it"), 0, imageId)
+        }
+        writeToLogFile(allDetections.toString(4))
+    }
+
+    private fun createLogFile() {
+        val fileName = "all_detections_${System.currentTimeMillis()}.json"
+        val directory = context.getExternalFilesDir(null)
+
+        logFile = if (directory != null) {
+            File(directory, fileName)
+        } else {
+            File(context.filesDir, fileName)
         }
     }
 
+    private fun writeToLogFile(message: String) {
+        logFile?.let {
+            try {
+                FileWriter(it, true).use { writer ->
+                    writer.append(message)
+                    writer.appendLine()
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
+    }
 
     @Throws(Exception::class)
     private fun loadImage(fileName: String): Bitmap {
         return BitmapFactory.decodeStream(context.assets.open(fileName))
     }
 }
-
-
-data class CocoDet(val image_id: Int, val category_id: Int, val bbox: List<Float>, val score: Float)
-

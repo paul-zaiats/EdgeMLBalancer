@@ -26,19 +26,19 @@ class MetricLogger(private val context: Context) {
     }
 
     private fun createLogFile() {
-    val fileName = "metrics_log_${System.currentTimeMillis()}.csv"
-    val directory = context.getExternalFilesDir(null)
+        val fileName = "metrics_log_${System.currentTimeMillis()}.csv"
+        val directory = context.getExternalFilesDir(null)
 
-    logFile = if (directory != null) {
-        File(directory, fileName)
-    } else {
-        File(context.filesDir, fileName)
+        logFile = if (directory != null) {
+            File(directory, fileName)
+        } else {
+            File(context.filesDir, fileName)
+        }
+
+        // Write header to the CSV file
+
+        writeToLogFile("Timestamp,BatteryLevel,CPUUsage,BatteryConsumption,SelectedModel,InstantaneousConfidence,AverageConfidence,CurrentTotalPredictions") // Updated header
     }
-
-    // Write header to the CSV file
-    
-    writeToLogFile("Timestamp,BatteryLevel,CPUUsage,BatteryConsumption,SelectedModel,InstantaneousConfidence,AverageConfidence,CurrentTotalPredictions") // Updated header
-}
 
     private fun writeToLogFile(message: String) {
         logFile?.let {
@@ -59,19 +59,20 @@ class MetricLogger(private val context: Context) {
     }
 
     fun logMetrics(
-    batteryLevel: Int,
-    cpuUsage: Float,
-    batteryConsumption: Float,
-    selectedModel: String,
-    instantaneousConfidence: Float,
-    averageConfidence: Float,
-    currentTotalPredictions: Int // New parameter
-) {
-    val timestamp = getCurrentTimestamp()
-    Log.d("MetricsLogger", "Instantaneous Confidence: $instantaneousConfidence")
-    val logMessage = "$timestamp,$batteryLevel,$cpuUsage,$batteryConsumption,$selectedModel,$instantaneousConfidence,$averageConfidence,$currentTotalPredictions" // Updated log message
-    writeToLogFile(logMessage)
-}
+        batteryLevel: Int,
+        cpuUsage: Float,
+        batteryConsumption: Float,
+        selectedModel: String,
+        instantaneousConfidence: Float,
+        averageConfidence: Float,
+        currentTotalPredictions: Int // New parameter
+    ) {
+        val timestamp = getCurrentTimestamp()
+        Log.d("MetricsLogger", "Instantaneous Confidence: $instantaneousConfidence")
+        val logMessage =
+            "$timestamp,$batteryLevel,$cpuUsage,$batteryConsumption,$selectedModel,$instantaneousConfidence,$averageConfidence,$currentTotalPredictions" // Updated log message
+        writeToLogFile(logMessage)
+    }
 
     fun updateCharts(
         batteryLevelChart: LineChart,
@@ -80,7 +81,12 @@ class MetricLogger(private val context: Context) {
     ) {
         updateChart(batteryLevelChart, batteryLevelEntries, "Battery Level", Color.BLUE)
         updateChart(cpuUsageChart, cpuUsageEntries, "CPU Usage", Color.RED)
-        updateChart(batteryConsumptionChart, batteryConsumptionEntries, "Battery Consumption", Color.GREEN)
+        updateChart(
+            batteryConsumptionChart,
+            batteryConsumptionEntries,
+            "Battery Consumption",
+            Color.GREEN
+        )
     }
 
     private fun updateChart(chart: LineChart, entries: List<Entry>, label: String, color: Int) {
@@ -103,5 +109,5 @@ class MetricLogger(private val context: Context) {
         chart.invalidate()
     }
 
-    
+
 }

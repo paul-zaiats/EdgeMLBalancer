@@ -894,7 +894,7 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
             modelPredictions[currentModelIndex] =
                 modelPredictions[currentModelIndex]!! + currentTotalPredictions
 
-// Calculate instantaneous confidence
+            // Calculate instantaneous confidence
             instantaneousConfidence = if (currentTotalPredictions > 0) {
                 results?.sumOf { detection ->
                     detection.categories.sumOf { it.score.toDouble() }

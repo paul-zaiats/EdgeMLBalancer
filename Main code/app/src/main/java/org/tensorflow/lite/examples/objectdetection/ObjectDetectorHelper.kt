@@ -22,6 +22,7 @@ import android.util.Log
 import org.tensorflow.lite.gpu.CompatibilityList
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
+import org.tensorflow.lite.support.image.ops.ResizeWithCropOrPadOp
 import org.tensorflow.lite.support.image.ops.Rot90Op
 import org.tensorflow.lite.task.core.BaseOptions
 import org.tensorflow.lite.task.vision.detector.Detection
@@ -102,7 +103,7 @@ class ObjectDetectorHelper(
         }
     }
 
-    fun detect(image: Bitmap, imageRotation: Int) {
+    fun detect(image: Bitmap, imageRotation: Int, imageId: Int? = null) {
         if (objectDetector == null) {
             setupObjectDetector()
         }
@@ -111,12 +112,17 @@ class ObjectDetectorHelper(
         // process
         var inferenceTime = SystemClock.uptimeMillis()
 
+
+        val modelInputWidth = 300
+        val modelInputHeight = 300
+
         // Create preprocessor for the image.
         // See https://www.tensorflow.org/lite/inference_with_metadata/
         //            lite_support#imageprocessor_architecture
         val imageProcessor =
             ImageProcessor.Builder()
                 .add(Rot90Op(-imageRotation / 90))
+//                .add(ResizeWithCropOrPadOp(modelInputHeight, modelInputWidth))
                 .build()
 
         // Preprocess the image and convert it into a TensorImage for detection.
@@ -124,11 +130,20 @@ class ObjectDetectorHelper(
 
         val results = objectDetector?.detect(tensorImage)
         inferenceTime = SystemClock.uptimeMillis() - inferenceTime
-        objectDetectorListener?.onResults(
-            results,
-            inferenceTime,
-            tensorImage.height,
-            tensorImage.width)
+
+        if (imageId == null) {
+            objectDetectorListener?.onResults(
+                results,
+                inferenceTime,
+                tensorImage.height,
+                tensorImage.width)
+        } else {
+            objectDetectorListener?.onResults(results,
+                inferenceTime,
+                tensorImage.height,
+                tensorImage.width,
+                imageId)
+        }
     }
 
     interface DetectorListener {
@@ -139,6 +154,15 @@ class ObjectDetectorHelper(
           imageHeight: Int,
           imageWidth: Int
         )
+        fun onResults(
+          results: MutableList<Detection>?,
+          inferenceTime: Long,
+          imageHeight: Int,
+          imageWidth: Int,
+          imageId: Int
+        ) {
+            //default no-op
+        }
     }
 
     companion object {
