@@ -63,7 +63,8 @@ class TFObjectDetectionTest {
                           results: MutableList<Detection>?,
                           inferenceTime: Long,
                           imageHeight: Int,
-                          imageWidth: Int
+                          imageWidth: Int,
+                          imageId: Int?
                         ) {
 
                             assertEquals(controlResults.size, results!!.size)
@@ -112,7 +113,8 @@ class TFObjectDetectionTest {
                           results: MutableList<Detection>?,
                           inferenceTime: Long,
                           imageHeight: Int,
-                          imageWidth: Int
+                          imageWidth: Int,
+                          imageId: Int?
                         ) {
                             assertNotNull(results)
                             for (result in results!!) {

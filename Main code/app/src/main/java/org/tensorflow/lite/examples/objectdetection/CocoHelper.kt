@@ -24,10 +24,8 @@ class CocoHelper(
         createLogFile()
     }
 
-    private val defaultThreshold = 0.01f
-
     val objectDetectorHelper = ObjectDetectorHelper(
-        context = context, threshold = 0.01F, maxResults = 100, objectDetectorListener = object : ObjectDetectorHelper.DetectorListener {
+        context = context, threshold = 0.05F, maxResults = 100, objectDetectorListener = object : ObjectDetectorHelper.DetectorListener {
             override fun onError(error: String) {
                 Log.e("CocoHelper", "Could not process image, error: $error")
             }
@@ -36,17 +34,8 @@ class CocoHelper(
                 results: MutableList<Detection>?,
                 inferenceTime: Long,
                 imageHeight: Int,
-                imageWidth: Int
-            ) {
-                TODO("Not yet implemented")
-            }
-
-            override fun onResults(
-                results: MutableList<Detection>?,
-                inferenceTime: Long,
-                imageHeight: Int,
                 imageWidth: Int,
-                imageId: Int
+                imageId: Int?
             ) {
                 for (result in results!!) {
                     val maxCategory = result.categories.maxByOrNull { it.score }

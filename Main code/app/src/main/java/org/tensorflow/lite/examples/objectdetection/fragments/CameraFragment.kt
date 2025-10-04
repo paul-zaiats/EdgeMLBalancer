@@ -881,7 +881,8 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
         results: MutableList<Detection>?,
         inferenceTime: Long,
         imageHeight: Int,
-        imageWidth: Int
+        imageWidth: Int,
+        imageId: Int?
     ) {
         activity?.runOnUiThread {
             fragmentCameraBinding.bottomSheetLayout.inferenceTimeVal.text =

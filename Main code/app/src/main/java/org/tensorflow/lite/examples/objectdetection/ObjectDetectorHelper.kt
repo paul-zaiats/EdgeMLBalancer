@@ -152,17 +152,9 @@ class ObjectDetectorHelper(
           results: MutableList<Detection>?,
           inferenceTime: Long,
           imageHeight: Int,
-          imageWidth: Int
-        )
-        fun onResults(
-          results: MutableList<Detection>?,
-          inferenceTime: Long,
-          imageHeight: Int,
           imageWidth: Int,
-          imageId: Int
-        ) {
-            //default no-op
-        }
+          imageId: Int? = null
+        )
     }
 
     companion object {
