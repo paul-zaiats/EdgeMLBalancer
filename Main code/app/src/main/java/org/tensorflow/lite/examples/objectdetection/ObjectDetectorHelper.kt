@@ -35,7 +35,8 @@ class ObjectDetectorHelper(
   var currentDelegate: Int = 0,
   var currentModel: Int = 0,
   val context: Context,
-  val objectDetectorListener: DetectorListener?
+  val objectDetectorListener: DetectorListener?,
+  val deadlineNs: Long = 35_000_000
 ) {
 
     // For this example this needs to be a var so it can be reset on changes. If the ObjectDetector
@@ -100,17 +101,23 @@ class ObjectDetectorHelper(
                 "Object detector failed to initialize. See error logs for details"
             )
             Log.e("Test", "TFLite failed to load model with error: " + e.message)
+        } catch (e: IllegalArgumentException) {
+
+            objectDetectorListener?.onError(
+                "Object detector failed to initialize. See error logs for details"
+            )
+            Log.e("Test", "TFLite failed to load model with error: " + e.message)
         }
     }
 
-    fun detect(image: Bitmap, imageRotation: Int, imageId: Int? = null) {
+    fun detect(image: Bitmap, imageRotation: Int, imageId: Int? = null): Long {
         if (objectDetector == null) {
             setupObjectDetector()
         }
 
         // Inference time is the difference between the system time at the start and finish of the
         // process
-        var inferenceTime = SystemClock.uptimeMillis()
+        var inferenceTime = SystemClock.elapsedRealtimeNanos()
 
 
         val modelInputWidth = 300
@@ -129,7 +136,7 @@ class ObjectDetectorHelper(
         val tensorImage = imageProcessor.process(TensorImage.fromBitmap(image))
 
         val results = objectDetector?.detect(tensorImage)
-        inferenceTime = SystemClock.uptimeMillis() - inferenceTime
+        inferenceTime = SystemClock.elapsedRealtimeNanos() - inferenceTime
 
         if (imageId == null) {
             objectDetectorListener?.onResults(
@@ -144,6 +151,7 @@ class ObjectDetectorHelper(
                 tensorImage.width,
                 imageId)
         }
+        return inferenceTime
     }
 
     interface DetectorListener {

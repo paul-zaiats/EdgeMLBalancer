@@ -55,9 +55,10 @@ android {
         viewBinding true
     }
     androidResources {
-        noCompress 'tflite'
+        noCompress 'tflite', 'jpg'
     }
 
+    namespace "org.tensorflow.lite.examples.objectdetection"
 }
 
 // import DownloadModels task
@@ -124,4 +125,6 @@ dependencies {
     implementation 'org.tensorflow:tensorflow-lite-gpu:2.9.0'
 
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+//    implementation 'com.google.mediapipe:tasks-vision:0.10.29'
+    implementation("org.hdrhistogram:HdrHistogram:2.2.2")
 }

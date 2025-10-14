@@ -5,3 +5,4 @@ coco_eval_report.json
 predictions.json
 annotated
 val2017_500
+all_detections_*.json

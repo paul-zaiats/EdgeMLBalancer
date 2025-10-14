@@ -68,6 +68,7 @@ import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.components.Legend
 import com.github.mikephil.charting.data.LineData
 import kotlin.random.Random
+
 //import org.tensorflow.lite.examples.objectdetection.fragments.PermissionsFragmentDirections
 //
 
@@ -78,19 +79,20 @@ class MetricLogger(private val context: Context) {
         createLogFile()
     }
 
-   fun logMetrics(
-    batteryLevel: Int,
-    cpuUsage: Float,
-    batteryConsumption: Float,
-    selectedModel: String,
-    instantaneousConfidence: Float,
-    averageConfidence: Float,
-    currentTotalPredictions: Int // New parameter
-) {
-    val timestamp = getCurrentTimestamp()
-    val logMessage = "$timestamp,$batteryLevel,$cpuUsage,$batteryConsumption,$selectedModel,$instantaneousConfidence,$averageConfidence,$currentTotalPredictions" // Updated log message
-    writeToLogFile(logMessage)
-}
+    fun logMetrics(
+        batteryLevel: Int,
+        cpuUsage: Float,
+        batteryConsumption: Float,
+        selectedModel: String,
+        instantaneousConfidence: Float,
+        averageConfidence: Float,
+        currentTotalPredictions: Int // New parameter
+    ) {
+        val timestamp = getCurrentTimestamp()
+        val logMessage =
+            "$timestamp,$batteryLevel,$cpuUsage,$batteryConsumption,$selectedModel,$instantaneousConfidence,$averageConfidence,$currentTotalPredictions" // Updated log message
+        writeToLogFile(logMessage)
+    }
 
     private fun createLogFile() {
         val fileName = "metrics_log_${System.currentTimeMillis()}.csv"
@@ -148,7 +150,8 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
     private lateinit var cpuUsageChart: LineChart
     private lateinit var batteryConsumptionChart: LineChart
     private lateinit var instantaneousConfidenceChart: LineChart // New chart for instantaneous confidence
-    private val instantaneousConfidenceEntries = ArrayList<Entry>() // New entries for instantaneous confidence
+    private val instantaneousConfidenceEntries =
+        ArrayList<Entry>() // New entries for instantaneous confidence
     private lateinit var averageConfidenceChart: LineChart // New chart for average confidence
     private val averageConfidenceEntries = ArrayList<Entry>() // New entries for average confidence
 
@@ -180,9 +183,12 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
     private var correctPredictions: Int = 0
     private val modelPredictions = mutableMapOf<Int, Int>() // Total predictions per model
     private val modelCorrectPredictions = mutableMapOf<Int, Int>() // Correct predictions per model
-    private val modelConfidence = mutableMapOf<Int, MutableList<Float>>() // Confidence scores per model
-    private val modelAverageConfidence = mutableMapOf<Int, Float>() // New map to store average confidence for each model
-    private val modelConfidenceCount = mutableMapOf<Int, Int>() // New map to count the number of confidence entries for each model
+    private val modelConfidence =
+        mutableMapOf<Int, MutableList<Float>>() // Confidence scores per model
+    private val modelAverageConfidence =
+        mutableMapOf<Int, Float>() // New map to store average confidence for each model
+    private val modelConfidenceCount =
+        mutableMapOf<Int, Int>() // New map to count the number of confidence entries for each model
     private val defaultThreshold = 0.3f
 
     private var instantaneousConfidence: Float = 0f
@@ -199,6 +205,7 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
     }
 
     // Global variables for time tracking
+    private val deadlineMS: Long = Long.MAX_VALUE
     private var E0TimeLapsed: Long = 0
     private var E1TimeLapsed: Long = 0
     private var E2TimeLapsed: Long = 0
@@ -221,7 +228,8 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
 
     private fun updateSelectedModel() {
         val selectedModel = getSelectedModel()
-        fragmentCameraBinding.bottomSheetLayout.textViewSelectedModel.text = "Selected Model: $selectedModel"
+        fragmentCameraBinding.bottomSheetLayout.textViewSelectedModel.text =
+            "Selected Model: $selectedModel"
     }
 
     private fun getSelectedModel(): String {
@@ -231,14 +239,12 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
     private fun getModelBasedOnCriteria(): String {
         val p = Math.random()
         val epsilon = 0.1
-        if(p<epsilon)
-        {
+        if (p < epsilon) {
             val num = Random.nextInt(0, 4)
-            if(num == 1)
-            {
+            if (num == 1) {
                 E0TimeLapsed++
                 E0last = getCpuUsage()
-                E0avg = (E0avg*(E0TimeLapsed-1) + E0last) / E0TimeLapsed
+                E0avg = (E0avg * (E0TimeLapsed - 1) + E0last) / E0TimeLapsed
                 if (objectDetectorHelper.currentModel != 1) {
                     objectDetectorHelper.currentModel = 1
                     Log.d("ModelUpdate", "Model updated to index: 1")
@@ -247,11 +253,10 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
                 }
                 return "EfficientDet Lite0"
             }
-            if(num == 2)
-            {
+            if (num == 2) {
                 E1TimeLapsed++
                 E1last = getCpuUsage()
-                E1avg = (E1avg*(E1TimeLapsed-1) + E1last) / E1TimeLapsed
+                E1avg = (E1avg * (E1TimeLapsed - 1) + E1last) / E1TimeLapsed
                 if (objectDetectorHelper.currentModel != 2) {
                     objectDetectorHelper.currentModel = 2
                     Log.d("ModelUpdate", "Model updated to index: 2")
@@ -260,11 +265,10 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
                 }
                 return "EfficientDet Lite1"
             }
-            if(num == 3)
-            {
+            if (num == 3) {
                 E2TimeLapsed++
                 E2last = getCpuUsage()
-                E2avg = (E2avg*(E2TimeLapsed-1) + E2last) / E2TimeLapsed
+                E2avg = (E2avg * (E2TimeLapsed - 1) + E2last) / E2TimeLapsed
                 if (objectDetectorHelper.currentModel != 3) {
                     objectDetectorHelper.currentModel = 3
                     Log.d("ModelUpdate", "Model updated to index: 3")
@@ -276,7 +280,7 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
 
             MVTimeLapsed++
             MVlast = getCpuUsage()
-            MVavg = (MVavg*(MVTimeLapsed-1) + MVlast) / MVTimeLapsed
+            MVavg = (MVavg * (MVTimeLapsed - 1) + MVlast) / MVTimeLapsed
             if (objectDetectorHelper.currentModel != 0) {
                 objectDetectorHelper.currentModel = 0
                 Log.d("ModelUpdate", "Model updated to index: 0")
@@ -322,11 +326,10 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
                         (modelConfidence[3]?.getOrNull(0) ?: defaultConfidence)))
 
         val value = min(min(score[0], score[1]), min(score[2], score[3]))
-        if(value == score[1])
-        {
+        if (value == score[1]) {
             E0TimeLapsed++
             E0last = getCpuUsage()
-            E0avg = (E0avg*(E0TimeLapsed-1) + E0last) / E0TimeLapsed
+            E0avg = (E0avg * (E0TimeLapsed - 1) + E0last) / E0TimeLapsed
             if (objectDetectorHelper.currentModel != 1) {
                 objectDetectorHelper.currentModel = 1
                 Log.d("ModelUpdate", "Model updated to index: 1")
@@ -335,11 +338,10 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
             }
             return "EfficientDet Lite0"
         }
-        if(value == score[2])
-        {
+        if (value == score[2]) {
             E1TimeLapsed++
             E1last = getCpuUsage()
-            E1avg = (E1avg*(E1TimeLapsed-1) + E1last) / E1TimeLapsed
+            E1avg = (E1avg * (E1TimeLapsed - 1) + E1last) / E1TimeLapsed
             if (objectDetectorHelper.currentModel != 2) {
                 objectDetectorHelper.currentModel = 2
                 Log.d("ModelUpdate", "Model updated to index: 2")
@@ -348,11 +350,10 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
             }
             return "EfficientDet Lite1"
         }
-        if(value == score[3])
-        {
+        if (value == score[3]) {
             E2TimeLapsed++
             E2last = getCpuUsage()
-            E2avg = (E2avg*(E2TimeLapsed-1) + E2last) / E2TimeLapsed
+            E2avg = (E2avg * (E2TimeLapsed - 1) + E2last) / E2TimeLapsed
             if (objectDetectorHelper.currentModel != 3) {
                 objectDetectorHelper.currentModel = 3
                 Log.d("ModelUpdate", "Model updated to index: 3")
@@ -364,7 +365,7 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
 
         MVTimeLapsed++
         MVlast = getCpuUsage()
-        MVavg = (MVavg*(MVTimeLapsed-1) + MVlast) / MVTimeLapsed
+        MVavg = (MVavg * (MVTimeLapsed - 1) + MVlast) / MVTimeLapsed
         if (objectDetectorHelper.currentModel != 0) {
             objectDetectorHelper.currentModel = 0
             Log.d("ModelUpdate", "Model updated to index: 0")
@@ -373,7 +374,7 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
         }
         return "MobileNet V1"
     }
-    
+
 
     // private fun getIndexOfModel(): Int { // Specify return type as Int
     //     val str = getSelectedModel()
@@ -412,7 +413,8 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
     }
 
     private fun getBatteryLevel(): Int {
-        val batteryManager = requireContext().getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+        val batteryManager =
+            requireContext().getSystemService(Context.BATTERY_SERVICE) as BatteryManager
         return batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
     }
 
@@ -427,33 +429,66 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
     private fun calculateInstantaneousConfidence(): Float {
         // Logic to calculate instantaneous confidence based on current results
         // This should return the latest instantaneous confidence value
-         val currentModelIndex = objectDetectorHelper.currentModel
-         val currentTotalPredictions = modelPredictions[currentModelIndex] ?: 0
-         val currentCorrectPredictions = modelCorrectPredictions[currentModelIndex] ?: 0
+        val currentModelIndex = objectDetectorHelper.currentModel
+        val currentTotalPredictions = modelPredictions[currentModelIndex] ?: 0
+        val currentCorrectPredictions = modelCorrectPredictions[currentModelIndex] ?: 0
 
-         return if (currentTotalPredictions > 0) {
-             (currentCorrectPredictions.toFloat() / currentTotalPredictions * 100)
-         } else {
-             0f
-         }
+        return if (currentTotalPredictions > 0) {
+            (currentCorrectPredictions.toFloat() / currentTotalPredictions * 100)
+        } else {
+            0f
+        }
     }
 
-    private fun updateCharts(batteryLevel: Int, cpuUsage: Float, batteryConsumption: Float, currentTotalPredictions: Int, instantaneousConfidence: Float) {
-    chartXValue += 1f
+    private fun updateCharts(
+        batteryLevel: Int,
+        cpuUsage: Float,
+        batteryConsumption: Float,
+        currentTotalPredictions: Int,
+        instantaneousConfidence: Float
+    ) {
+        chartXValue += 1f
 
-    // Update battery level chart
-    updateChart(batteryLevelChart, batteryLevelEntries, batteryLevel.toFloat(), "Battery Level", Color.BLUE)
-    updateChart(cpuUsageChart, cpuUsageEntries, cpuUsage, "CPU Usage", Color.RED)
-    updateChart(batteryConsumptionChart, batteryConsumptionEntries, batteryConsumption, "Battery Consumption", Color.GREEN)
+        // Update battery level chart
+        updateChart(
+            batteryLevelChart,
+            batteryLevelEntries,
+            batteryLevel.toFloat(),
+            "Battery Level",
+            Color.BLUE
+        )
+        updateChart(cpuUsageChart, cpuUsageEntries, cpuUsage, "CPU Usage", Color.RED)
+        updateChart(
+            batteryConsumptionChart,
+            batteryConsumptionEntries,
+            batteryConsumption,
+            "Battery Consumption",
+            Color.GREEN
+        )
 
-    val averageConfidence = averageConfidenceEntries.lastOrNull()?.y ?: 0f // Get last average confidence or 0 if empty
+        val averageConfidence = averageConfidenceEntries.lastOrNull()?.y
+            ?: 0f // Get last average confidence or 0 if empty
 
-    // Log metrics including new values
-    metricLogger.logMetrics(batteryLevel, cpuUsage, batteryConsumption, getSelectedModel(), instantaneousConfidence, averageConfidence, currentTotalPredictions) // Updated call
-}
-    
-    
-    private fun updateChart(chart: LineChart, entries: ArrayList<Entry>, newValue: Float, label: String, color: Int) {
+        // Log metrics including new values
+        metricLogger.logMetrics(
+            batteryLevel,
+            cpuUsage,
+            batteryConsumption,
+            getSelectedModel(),
+            instantaneousConfidence,
+            averageConfidence,
+            currentTotalPredictions
+        ) // Updated call
+    }
+
+
+    private fun updateChart(
+        chart: LineChart,
+        entries: ArrayList<Entry>,
+        newValue: Float,
+        label: String,
+        color: Int
+    ) {
         entries.add(Entry(chartXValue, newValue))
 
         // Limit the number of visible entries
@@ -559,9 +594,11 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        instantaneousConfidenceChart = fragmentCameraBinding.bottomSheetLayout.instantaneousConfidenceChart // Initialize the new chart
+        instantaneousConfidenceChart =
+            fragmentCameraBinding.bottomSheetLayout.instantaneousConfidenceChart // Initialize the new chart
         setupChart(instantaneousConfidenceChart) // Setup the new chart
-        averageConfidenceChart = fragmentCameraBinding.bottomSheetLayout.averageConfidenceChart // Initialize the new chart
+        averageConfidenceChart =
+            fragmentCameraBinding.bottomSheetLayout.averageConfidenceChart // Initialize the new chart
         setupChart(averageConfidenceChart) // Setup the new chart
 
         objectDetectorHelper = ObjectDetectorHelper(
@@ -607,49 +644,88 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
     private fun showStatsSection() {
         fragmentCameraBinding.bottomSheetLayout.statsSection.visibility = View.VISIBLE
         fragmentCameraBinding.bottomSheetLayout.graphsSection.visibility = View.GONE
-        fragmentCameraBinding.bottomSheetLayout.statsIcon.setColorFilter(ContextCompat.getColor(requireContext(), R.color.white))
-        fragmentCameraBinding.bottomSheetLayout.graphsIcon.setColorFilter(ContextCompat.getColor(requireContext(), R.color.grey))
+        fragmentCameraBinding.bottomSheetLayout.statsIcon.setColorFilter(
+            ContextCompat.getColor(
+                requireContext(),
+                R.color.white
+            )
+        )
+        fragmentCameraBinding.bottomSheetLayout.graphsIcon.setColorFilter(
+            ContextCompat.getColor(
+                requireContext(),
+                R.color.grey
+            )
+        )
     }
 
     private fun showGraphsSection() {
         fragmentCameraBinding.bottomSheetLayout.statsSection.visibility = View.GONE
         fragmentCameraBinding.bottomSheetLayout.graphsSection.visibility = View.VISIBLE
-        fragmentCameraBinding.bottomSheetLayout.statsIcon.setColorFilter(ContextCompat.getColor(requireContext(), R.color.grey))
-        fragmentCameraBinding.bottomSheetLayout.graphsIcon.setColorFilter(ContextCompat.getColor(requireContext(), R.color.white))
+        fragmentCameraBinding.bottomSheetLayout.statsIcon.setColorFilter(
+            ContextCompat.getColor(
+                requireContext(),
+                R.color.grey
+            )
+        )
+        fragmentCameraBinding.bottomSheetLayout.graphsIcon.setColorFilter(
+            ContextCompat.getColor(
+                requireContext(),
+                R.color.white
+            )
+        )
     }
 
     private fun startMetricUpdates() {
-    val handler = Handler(Looper.getMainLooper())
-    handler.post(object : Runnable {
-        override fun run() {
-            val batteryLevel = getBatteryLevel()
-            val cpuUsage = getCpuUsage()
-            val batteryConsumption = getBatteryConsumption()
-            val selectedModel = getSelectedModel()
+        val handler = Handler(Looper.getMainLooper())
+        handler.post(object : Runnable {
+            override fun run() {
+                val batteryLevel = getBatteryLevel()
+                val cpuUsage = getCpuUsage()
+                val batteryConsumption = getBatteryConsumption()
+                val selectedModel = getSelectedModel()
 
-            CPU_Usage = cpuUsage.toInt()
+                CPU_Usage = cpuUsage.toInt()
 
-            // Calculate instantaneous and average confidence
-            val averageConfidence = averageConfidenceEntries.lastOrNull()?.y ?: 0f // Get last average confidence or 0 if empty
+                // Calculate instantaneous and average confidence
+                val averageConfidence = averageConfidenceEntries.lastOrNull()?.y
+                    ?: 0f // Get last average confidence or 0 if empty
 
-            // Retrieve or calculate currentTotalPredictions
-            // val currentTotalPredictions = modelPredictions[objectDetectorHelper.currentModel] ?: 0 // Assuming you have a way to get this
-            val currentTotalPredictions = currentNoofBoxes
+                // Retrieve or calculate currentTotalPredictions
+                // val currentTotalPredictions = modelPredictions[objectDetectorHelper.currentModel] ?: 0 // Assuming you have a way to get this
+                val currentTotalPredictions = currentNoofBoxes
 
-            fragmentCameraBinding.bottomSheetLayout.textViewBatteryLevel.text = "Battery Level: $batteryLevel%"
-            fragmentCameraBinding.bottomSheetLayout.textViewCpuUsage.text = "CPU Usage: ${String.format("%.2f", cpuUsage)}%"
-            fragmentCameraBinding.bottomSheetLayout.textViewBatteryConsumption.text = "Battery Consumption: ${String.format("%.2f", batteryConsumption)}%"
-            fragmentCameraBinding.bottomSheetLayout.textViewSelectedModel.text = "Selected Model: $selectedModel"
+                fragmentCameraBinding.bottomSheetLayout.textViewBatteryLevel.text =
+                    "Battery Level: $batteryLevel%"
+                fragmentCameraBinding.bottomSheetLayout.textViewCpuUsage.text =
+                    "CPU Usage: ${String.format("%.2f", cpuUsage)}%"
+                fragmentCameraBinding.bottomSheetLayout.textViewBatteryConsumption.text =
+                    "Battery Consumption: ${String.format("%.2f", batteryConsumption)}%"
+                fragmentCameraBinding.bottomSheetLayout.textViewSelectedModel.text =
+                    "Selected Model: $selectedModel"
 
-            updateCharts(batteryLevel, cpuUsage, batteryConsumption, currentTotalPredictions, instantaneousConfidence) // Pass currentTotalPredictions to updateCharts
-            metricLogger.logMetrics(batteryLevel, cpuUsage, batteryConsumption, selectedModel, instantaneousConfidence, averageConfidence, currentTotalPredictions) // Updated call
-            
-            updateSelectedModel()
+                updateCharts(
+                    batteryLevel,
+                    cpuUsage,
+                    batteryConsumption,
+                    currentTotalPredictions,
+                    instantaneousConfidence
+                ) // Pass currentTotalPredictions to updateCharts
+                metricLogger.logMetrics(
+                    batteryLevel,
+                    cpuUsage,
+                    batteryConsumption,
+                    selectedModel,
+                    instantaneousConfidence,
+                    averageConfidence,
+                    currentTotalPredictions
+                ) // Updated call
 
-            handler.postDelayed(this, 1000) // Update every second
-        }
-    })
-}
+                updateSelectedModel()
+
+                handler.postDelayed(this, 1000) // Update every second
+            }
+        })
+    }
 
     private fun initBottomSheetControls() {
         // When clicked, lower detection score threshold floor
@@ -768,8 +844,6 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
     //     _fragmentCameraBinding = null
     //     super.onDestroyView() // Ensure this is called at the end
     // }
-
-
 
 
     // Update the values displayed in the bottom sheet. Reset detector.
@@ -942,8 +1016,6 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
             fragmentCameraBinding.bottomSheetLayout.textViewAverageConfidence.text =
                 "Average Confidence: ${String.format("%.2f", averageConfidence)}%"
 
-
-            
 
             // Pass necessary information to OverlayView for drawing on the canvas
             fragmentCameraBinding.overlay.setResults(

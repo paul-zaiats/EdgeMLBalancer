@@ -17,42 +17,42 @@ class CocoHelper(
     val context: Context
 ) {
 
-    val allDetections = JSONArray()
+    var allDetections = JSONArray()
     private var logFile: File? = null
 
-    init {
-        createLogFile()
-    }
+    private fun helper(modelIndex: Int): ObjectDetectorHelper = ObjectDetectorHelper(
+            context = context,
+        threshold = 0.05F,
+        maxResults = 100,
+        currentModel = modelIndex,
+        objectDetectorListener = object : ObjectDetectorHelper.DetectorListener {
+                override fun onError(error: String) {
+                    Log.e("CocoHelper", "Could not process image, error: $error")
+                }
 
-    val objectDetectorHelper = ObjectDetectorHelper(
-        context = context, threshold = 0.05F, maxResults = 100, objectDetectorListener = object : ObjectDetectorHelper.DetectorListener {
-            override fun onError(error: String) {
-                Log.e("CocoHelper", "Could not process image, error: $error")
-            }
-
-            override fun onResults(
-                results: MutableList<Detection>?,
-                inferenceTime: Long,
-                imageHeight: Int,
-                imageWidth: Int,
-                imageId: Int?
-            ) {
-                for (result in results!!) {
-                    val maxCategory = result.categories.maxByOrNull { it.score }
-                    if (maxCategory != null) {
-                        val cocoBbox = toCocoBbox(result.boundingBox)
-                        val categoryId = maxCategory.index + 1
-                        val detectionJson = JSONObject().apply {
-                            put("image_id", imageId)
-                            put("category_id", categoryId)
-                            put("bbox", cocoBbox)
-                            put("score", maxCategory.score)
+                override fun onResults(
+                    results: MutableList<Detection>?,
+                    inferenceTime: Long,
+                    imageHeight: Int,
+                    imageWidth: Int,
+                    imageId: Int?
+                ) {
+                    for (result in results!!) {
+                        val maxCategory = result.categories.maxByOrNull { it.score }
+                        if (maxCategory != null) {
+                            val cocoBbox = toCocoBbox(result.boundingBox)
+                            val categoryId = maxCategory.index + 1
+                            val detectionJson = JSONObject().apply {
+                                put("image_id", imageId)
+                                put("category_id", categoryId)
+                                put("bbox", cocoBbox)
+                                put("score", maxCategory.score)
+                            }
+                            allDetections.put(detectionJson)
                         }
-                        allDetections.put(detectionJson)
                     }
                 }
-            }
-        })
+            })
 
     fun cocoImageIdFromFilename(name: String): Int {
         // "000000397133.jpg" -> 397133
@@ -69,15 +69,23 @@ class CocoHelper(
     }
 
     fun scanImages() {
-        context.assets.list("val2017_500")?.forEach {
-            val imageId = cocoImageIdFromFilename(it)
-            objectDetectorHelper.detect(loadImage("val2017_500/$it"), 0, imageId)
+        val statsHelper = StatsHelper(context, 35_000_000)
+        (0..3).forEach { modelIndex ->
+            val helper = helper(modelIndex)
+            context.assets.list("val2017")?.forEach { img ->
+                val imageId = cocoImageIdFromFilename(img)
+                val latency = helper.detect(loadImage("val2017/$img"), 0, imageId)
+                statsHelper.record(modelIndex, latency)
+            }
+            createLogFile(modelIndex)
+            writeToLogFile(allDetections.toString(4))
+            allDetections = JSONArray()
         }
-        writeToLogFile(allDetections.toString(4))
+        statsHelper.logResults()
     }
 
-    private fun createLogFile() {
-        val fileName = "all_detections_${System.currentTimeMillis()}.json"
+    private fun createLogFile(modelIndex: Int) {
+        val fileName = "all_detections_${modelIndex}_${System.currentTimeMillis()}.json"
         val directory = context.getExternalFilesDir(null)
 
         logFile = if (directory != null) {
