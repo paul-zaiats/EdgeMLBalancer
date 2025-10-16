@@ -11,7 +11,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
-class StatsHelper(private val context: Context, private val deadlineNs: Long) {
+class TimeStatsCollector(private val context: Context, private val deadlineNs: Long) {
 
     private var logFile: File? = null
 
@@ -23,12 +23,14 @@ class StatsHelper(private val context: Context, private val deadlineNs: Long) {
     val highestTrackableNs = TimeUnit.MINUTES.toNanos(1)
     val sigDigits = 3
 
+    val histHybrid = Histogram(lowestDiscernibleNs, highestTrackableNs, sigDigits)
     val histMV = Histogram(lowestDiscernibleNs, highestTrackableNs, sigDigits)
     val histE0 = Histogram(lowestDiscernibleNs, highestTrackableNs, sigDigits)
     val histE1 = Histogram(lowestDiscernibleNs, highestTrackableNs, sigDigits)
     val histE2 = Histogram(lowestDiscernibleNs, highestTrackableNs, sigDigits)
 
     val modelIndexMapping: Map<Int, Histogram> = mapOf(
+        999 to histHybrid,
         0 to histMV,
         1 to histE0,
         2 to histE1,
@@ -57,7 +59,7 @@ class StatsHelper(private val context: Context, private val deadlineNs: Long) {
                 modelName = "EfficientDet Lite2"
             }
             val logMessage =
-                "$timestamp,${modelName},${s.avgNs},${s.median},${s.p99},${s.p999},${s.dmr},${s.wcet}" // Updated log message
+                "$timestamp,${modelName},${it.totalCount},${s.avgNs},${s.median},${s.p99},${s.p999},${s.dmr},${s.wcet}" // Updated log message
             writeToLogFile(logMessage)
         }
     }
@@ -77,7 +79,7 @@ class StatsHelper(private val context: Context, private val deadlineNs: Long) {
             File(context.filesDir, fileName)
         }
 
-        writeToLogFile("Timestamp,SelectedModel,AverageLatency,MedianLatency,p99Latency,p999Latency,DeadlineMissRatio,WorstCaseExecutionTime")
+        writeToLogFile("Timestamp,SelectedModel,TotalCount,AverageLatency,MedianLatency,p99Latency,p999Latency,DeadlineMissRatio,WorstCaseExecutionTime")
     }
 
     private fun writeToLogFile(message: String) {

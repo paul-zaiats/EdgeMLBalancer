@@ -69,19 +69,44 @@ class CocoHelper(
     }
 
     fun scanImages() {
-        val statsHelper = StatsHelper(context, 35_000_000)
+        val timeStatsCollector = TimeStatsCollector(context, 35_000_000)
+
+//        runBaseModels(timeStatsCollector)
+        runHybrid(timeStatsCollector)
+
+        timeStatsCollector.logResults()
+    }
+
+    private fun runBaseModels(timeStatsCollector: TimeStatsCollector) {
         (0..3).forEach { modelIndex ->
             val helper = helper(modelIndex)
             context.assets.list("val2017")?.forEach { img ->
                 val imageId = cocoImageIdFromFilename(img)
                 val latency = helper.detect(loadImage("val2017/$img"), 0, imageId)
-                statsHelper.record(modelIndex, latency)
+                timeStatsCollector.record(modelIndex, latency)
             }
             createLogFile(modelIndex)
             writeToLogFile(allDetections.toString(4))
             allDetections = JSONArray()
         }
-        statsHelper.logResults()
+    }
+
+    private fun runHybrid(timeStatsCollector: TimeStatsCollector) {
+        val helper = helper(0)
+        val modelSelector = ModelSelector(helper)
+        var lastModelUpdateTime = System.currentTimeMillis()
+        context.assets.list("val2017")?.forEach { img ->
+            if (lastModelUpdateTime + 1000 >= System.currentTimeMillis()) {
+                modelSelector.getModelBasedOnCriteria()
+                lastModelUpdateTime = System.currentTimeMillis()
+            }
+            val imageId = cocoImageIdFromFilename(img)
+            val latency = helper.detect(loadImage("val2017/$img"), 0, imageId)
+            timeStatsCollector.record(helper.currentModel, latency)
+        }
+        createLogFile(999)
+        writeToLogFile(allDetections.toString(4))
+        allDetections = JSONArray()
     }
 
     private fun createLogFile(modelIndex: Int) {
