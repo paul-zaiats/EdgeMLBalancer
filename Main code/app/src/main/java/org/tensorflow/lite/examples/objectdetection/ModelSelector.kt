@@ -16,19 +16,19 @@ class ModelSelector(private val odh: ObjectDetectorHelper) {
 
     // RT params
     var deadlineMs = 35
-    private val slack = 0.85                  // require 15% headroom
+    private val slack = 0.9                 // require 10% headroom
     private val alphaLatency = 0.2            // EMA smoothing
     private val alphaConf = 0.1
     private val alphaDMR = 0.2
 
     // switching guards
     private var lastSwitchAtMs = 0L
-    private val switchCooldownMs = 1500L
+    private val switchCooldownMs = 1000L
 
     // exploration
-    private var epsilon = 0.12
+    private var epsilon = 0.1
     private val minEpsilon = 0.02
-    private val epsilonDecay = 0.995
+    private val epsilonDecay = 0.9
 
     val timeStatsCollector = TimeStatsCollector(odh.context, deadlineMs * 1_000_000L)
 
@@ -65,14 +65,11 @@ class ModelSelector(private val odh: ObjectDetectorHelper) {
             return switchTo(pick, nowMs)
         }
 
-        // Pick the cheapest model that meets deadline+slack; tie-break by higher confidence
+        // Pick the most accurate model that meets deadline+slack
         val candidates = (0 until N_MODELS).filter {
             val s = stats[it]
             s.emaLatencyMs > 0 && s.emaLatencyMs <= slack * deadlineMs
-        }.sortedWith(
-            compareBy<Int> { stats[it].emaLatencyMs }
-                .thenByDescending { stats[it].emaConf }
-        )
+        }.sortedWith(compareBy { stats[it].emaLatencyMs })
 
         val next = when {
             candidates.isNotEmpty() -> candidates.last()

@@ -24,6 +24,7 @@ class TimeStatsCollector(private val context: Context, private val deadlineNs: L
     val sigDigits = 3
 
     val histHybrid = Histogram(lowestDiscernibleNs, highestTrackableNs, sigDigits)
+    val histAll = Histogram(lowestDiscernibleNs, highestTrackableNs, sigDigits)
     val histMV = Histogram(lowestDiscernibleNs, highestTrackableNs, sigDigits)
     val histE0 = Histogram(lowestDiscernibleNs, highestTrackableNs, sigDigits)
     val histE1 = Histogram(lowestDiscernibleNs, highestTrackableNs, sigDigits)
@@ -39,13 +40,14 @@ class TimeStatsCollector(private val context: Context, private val deadlineNs: L
 
     fun record(modelIndex: Int, latencyNano: Long) {
         modelIndexMapping[modelIndex]!!.recordValue(latencyNano)
+        histAll.recordValue(latencyNano)
     }
 
     fun logResults() {
         val timestamp = getCurrentTimestamp()
         Log.d("StatsHelper", "Log timings")
 
-        listOf(histMV, histE0, histE1, histE2).forEach {
+        listOf(histMV, histE0, histE1, histE2, histAll).forEach {
             val s = getStats(it)
 
             var modelName: String
@@ -55,8 +57,10 @@ class TimeStatsCollector(private val context: Context, private val deadlineNs: L
                 modelName = "EfficientDet Lite0"
             } else if (it === histE1) {
                 modelName = "EfficientDet Lite1"
-            } else {
+            } else if (it === histE2) {
                 modelName = "EfficientDet Lite2"
+            } else {
+                modelName = "All Models"
             }
             val logMessage =
                 "$timestamp,${modelName},${it.totalCount},${s.avgNs},${s.median},${s.p99},${s.p999},${s.dmr},${s.wcet}" // Updated log message
