@@ -1,202 +1,107 @@
 package org.tensorflow.lite.examples.objectdetection
 
-import android.os.Process
 import android.util.Log
-import java.io.File
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.random.Random
 
-class ModelSelector(var objectDetectorHelper: ObjectDetectorHelper) {
+data class ModelStats(
+    var emaLatencyMs: Double = 0.0,
+    var emaConf: Double = 0.0,
+    var emaDMR: Double = 0.0,       // deadline miss ratio in [0,1]
+    var seen: Int = 0
+)
 
-    private var E0TimeLapsed: Long = 0
-    private var E1TimeLapsed: Long = 0
-    private var E2TimeLapsed: Long = 0
-    private var MVTimeLapsed: Long = 0
+class ModelSelector(private val odh: ObjectDetectorHelper) {
 
-    private var E0avg: Float = 0f
-    private var E1avg: Float = 0f
-    private var E2avg: Float = 0f
-    private var MVavg: Float = 0f
+    private val N_MODELS = 4 // 0: MV1, 1: E0, 2: E1, 3: E2
+    private val stats = Array(N_MODELS) { ModelStats() }
 
-    private var E0last: Float = 0f
-    private var E1last: Float = 0f
-    private var E2last: Float = 0f
-    private var MVlast: Float = 0f
+    // RT params
+    var deadlineMs = 35
+    private val slack = 0.85                  // require 15% headroom
+    private val alphaLatency = 0.2            // EMA smoothing
+    private val alphaConf = 0.1
+    private val alphaDMR = 0.2
 
-    private val modelConfidence =
-        mutableMapOf<Int, MutableList<Float>>() // Confidence scores per model
-    private val modelAverageConfidence =
-        mutableMapOf<Int, Float>() // New map to store average confidence for each model
+    // switching guards
+    private var lastSwitchAtMs = 0L
+    private val switchCooldownMs = 1500L
 
+    // exploration
+    private var epsilon = 0.12
+    private val minEpsilon = 0.02
+    private val epsilonDecay = 0.995
 
-    fun getModelBasedOnCriteria(): Pair<String, Boolean> {
-        val p = Math.random()
-        val epsilon = 0.1
-        var modelChanged = false
-        if (p < epsilon) {
-            val num = Random.nextInt(0, 4)
-            if (num == 1) {
-                E0TimeLapsed++
-                E0last = getCpuUsage()
-                E0avg = (E0avg * (E0TimeLapsed - 1) + E0last) / E0TimeLapsed
-                if (objectDetectorHelper.currentModel != 1) {
-                    objectDetectorHelper.currentModel = 1
-                    Log.d("ModelUpdate", "Model updated to index: 1")
-                    // Clear and reinitialize the detector
-                    objectDetectorHelper.clearObjectDetector()
-                    modelChanged = true
-                }
-                return Pair("EfficientDet Lite0", modelChanged)
-            }
-            if (num == 2) {
-                E1TimeLapsed++
-                E1last = getCpuUsage()
-                E1avg = (E1avg * (E1TimeLapsed - 1) + E1last) / E1TimeLapsed
-                if (objectDetectorHelper.currentModel != 2) {
-                    objectDetectorHelper.currentModel = 2
-                    Log.d("ModelUpdate", "Model updated to index: 2")
-                    // Clear and reinitialize the detector
-                    objectDetectorHelper.clearObjectDetector()
-                    modelChanged = true
-                }
-                return Pair("EfficientDet Lite1", modelChanged)
-            }
-            if (num == 3) {
-                E2TimeLapsed++
-                E2last = getCpuUsage()
-                E2avg = (E2avg * (E2TimeLapsed - 1) + E2last) / E2TimeLapsed
-                if (objectDetectorHelper.currentModel != 3) {
-                    objectDetectorHelper.currentModel = 3
-                    Log.d("ModelUpdate", "Model updated to index: 3")
-                    // Clear and reinitialize the detector
-                    objectDetectorHelper.clearObjectDetector()
-                    modelChanged = true
-                }
-                return Pair("EfficientDet Lite2", modelChanged)
-            }
+    val timeStatsCollector = TimeStatsCollector(odh.context, deadlineMs * 1_000_000L)
 
-            MVTimeLapsed++
-            MVlast = getCpuUsage()
-            MVavg = (MVavg * (MVTimeLapsed - 1) + MVlast) / MVTimeLapsed
-            if (objectDetectorHelper.currentModel != 0) {
-                objectDetectorHelper.currentModel = 0
-                Log.d("ModelUpdate", "Model updated to index: 0")
-                // Clear and reinitialize the detector
-                objectDetectorHelper.clearObjectDetector()
-                modelChanged = true
-            }
-            return Pair("MobileNet V1", modelChanged)
-        }
+    fun updateMetrics(modelId: Int, latencyNs: Long, avgConfThisFrame: Double) {
+        val latencyMs = latencyNs / 1_000_000
+        val s = stats[modelId]
+        s.emaLatencyMs = if (s.seen == 0) latencyMs.toDouble() else (1 - alphaLatency) * s.emaLatencyMs + alphaLatency * latencyMs
+        s.emaConf     = if (s.seen == 0) avgConfThisFrame else (1 - alphaConf) * s.emaConf + alphaConf * avgConfThisFrame
+        val miss = if (latencyMs > deadlineMs) 1.0 else 0.0
+        s.emaDMR      = if (s.seen == 0) miss else (1 - alphaDMR) * s.emaDMR + alphaDMR * miss
+        s.seen++
 
-//        val score = Array(4) { 0.0f } // Array of size 4, initialized to 0.0f
-//        val defaultConfidence = 1f // Default value if confidence is null
-//
-//        score[0] = min(MVavg.toFloat(), MVlast.toFloat()) *
-//                (1 - ((modelAverageConfidence[0] ?: defaultConfidence) / (modelConfidence[0].toFloat() ?: defaultConfidence)))
-//
-//
-//        score[1] = min(E0avg.toFloat(), E0last.toFloat()) *
-//                (1 - ((modelAverageConfidence[1] ?: defaultConfidence) / (modelConfidence[1].toFloat() ?: defaultConfidence)))
-//
-//        score[2] = min(E1avg.toFloat(), E1last.toFloat()) *
-//                (1 - ((modelAverageConfidence[2] ?: defaultConfidence) / (modelConfidence[2]?.toFloat() ?: defaultConfidence)))
-//
-//        score[3] = min(E2avg.toFloat(), E2last.toFloat()) *
-//                (1 - ((modelAverageConfidence[3] ?: defaultConfidence) / (modelConfidence[3]?.toFloat() ?: defaultConfidence)))
-
-        val score = Array(4) { 0.0f } // Array of size 4, initialized to 0.0f
-        val defaultConfidence = 1f // Default value if confidence is null
-
-        score[0] = min(MVavg.toFloat(), MVlast.toFloat()) * (1 - ((modelAverageConfidence[0]
-            ?: defaultConfidence) / (modelConfidence[0]?.getOrNull(0) ?: defaultConfidence)))
-
-        score[1] = min(E0avg.toFloat(), E0last.toFloat()) * (1 - ((modelAverageConfidence[1]
-            ?: defaultConfidence) / (modelConfidence[1]?.getOrNull(0) ?: defaultConfidence)))
-
-        score[2] = min(E1avg.toFloat(), E1last.toFloat()) * (1 - ((modelAverageConfidence[2]
-            ?: defaultConfidence) / (modelConfidence[2]?.getOrNull(0) ?: defaultConfidence)))
-
-        score[3] = min(E2avg.toFloat(), E2last.toFloat()) * (1 - ((modelAverageConfidence[3]
-            ?: defaultConfidence) / (modelConfidence[3]?.getOrNull(0) ?: defaultConfidence)))
-
-        val value = min(min(score[0], score[1]), min(score[2], score[3]))
-        if (value == score[1]) {
-            E0TimeLapsed++
-            E0last = getCpuUsage()
-            E0avg = (E0avg * (E0TimeLapsed - 1) + E0last) / E0TimeLapsed
-            if (objectDetectorHelper.currentModel != 1) {
-                objectDetectorHelper.currentModel = 1
-                Log.d("ModelUpdate", "Model updated to index: 1")
-                // Clear and reinitialize the detector
-                objectDetectorHelper.clearObjectDetector()
-                modelChanged = true
-            }
-            return Pair("EfficientDet Lite0", modelChanged)
-        }
-        if (value == score[2]) {
-            E1TimeLapsed++
-            E1last = getCpuUsage()
-            E1avg = (E1avg * (E1TimeLapsed - 1) + E1last) / E1TimeLapsed
-            if (objectDetectorHelper.currentModel != 2) {
-                objectDetectorHelper.currentModel = 2
-                Log.d("ModelUpdate", "Model updated to index: 2")
-                // Clear and reinitialize the detector
-                objectDetectorHelper.clearObjectDetector()
-                modelChanged = true
-            }
-            return Pair("EfficientDet Lite1", modelChanged)
-        }
-        if (value == score[3]) {
-            E2TimeLapsed++
-            E2last = getCpuUsage()
-            E2avg = (E2avg * (E2TimeLapsed - 1) + E2last) / E2TimeLapsed
-            if (objectDetectorHelper.currentModel != 3) {
-                objectDetectorHelper.currentModel = 3
-                Log.d("ModelUpdate", "Model updated to index: 3")
-                // Clear and reinitialize the detector
-                objectDetectorHelper.clearObjectDetector()
-                modelChanged = true
-            }
-            return Pair("EfficientDet Lite2", modelChanged)
-        }
-
-        MVTimeLapsed++
-        MVlast = getCpuUsage()
-        MVavg = (MVavg * (MVTimeLapsed - 1) + MVlast) / MVTimeLapsed
-        if (objectDetectorHelper.currentModel != 0) {
-            objectDetectorHelper.currentModel = 0
-            Log.d("ModelUpdate", "Model updated to index: 0")
-            // Clear and reinitialize the detector
-            objectDetectorHelper.clearObjectDetector()
-            modelChanged = true
-        }
-        return Pair("MobileNet V1", modelChanged)
+        timeStatsCollector.record(modelId, latencyNs)
     }
 
-    private fun getCpuUsage(): Float {
-        val pid = Process.myPid()
-        val path = "/proc/$pid/stat"
-        try {
-            val statContent = File(path).readText()
-            val parts = statContent.split(" ")
-            val utime = parts[13].toLong()
-            val stime = parts[14].toLong()
-            val totalTime = utime + stime
+    fun chooseNextModel(): Pair<String, Boolean> {
+        val nowMs = System.currentTimeMillis()
 
-            Thread.sleep(100) // Wait for 100ms
+        // Respect cooldown unless the current model violates the deadline badly
+        val cur = odh.currentModel.coerceIn(0, N_MODELS - 1)
+        val curOk = stats[cur].emaLatencyMs > 0 &&
+                stats[cur].emaLatencyMs <= slack * deadlineMs &&
+                stats[cur].emaDMR <= 0.05
 
-            val newStatContent = File(path).readText()
-            val newParts = newStatContent.split(" ")
-            val newUtime = newParts[13].toLong()
-            val newStime = newParts[14].toLong()
-            val newTotalTime = newUtime + newStime
-
-            val cpuUsage = (newTotalTime - totalTime) / 1f
-            return max(0f, min(cpuUsage, 100f))
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return 0f
+        if ((nowMs - lastSwitchAtMs) < switchCooldownMs && curOk) {
+            return nameOf(cur) to false
         }
+
+        // ε-greedy exploration only if we have healthy slack
+        val healthy = stats.any { it.emaLatencyMs > 0 && it.emaLatencyMs <= slack * deadlineMs }
+        if (healthy && Math.random() < epsilon) {
+            epsilon = maxOf(minEpsilon, epsilon * epsilonDecay)
+            val pick = (0 until N_MODELS).random()
+            return switchTo(pick, nowMs)
+        }
+
+        // Pick the cheapest model that meets deadline+slack; tie-break by higher confidence
+        val candidates = (0 until N_MODELS).filter {
+            val s = stats[it]
+            s.emaLatencyMs > 0 && s.emaLatencyMs <= slack * deadlineMs
+        }.sortedWith(
+            compareBy<Int> { stats[it].emaLatencyMs }
+                .thenByDescending { stats[it].emaConf }
+        )
+
+        val next = when {
+            candidates.isNotEmpty() -> candidates.last()
+            else -> fastestSeenModel() ?: cur // fallback
+        }
+
+        if (next == cur) {
+            return nameOf(cur) to false
+        }
+        return switchTo(next, nowMs)
+    }
+
+    private fun fastestSeenModel(): Int? =
+        (0 until N_MODELS)
+            .filter { stats[it].emaLatencyMs > 0 }
+            .minByOrNull { stats[it].emaLatencyMs }
+
+    private fun switchTo(modelId: Int, nowMs: Long): Pair<String, Boolean> {
+        if (odh.currentModel != modelId) {
+            odh.currentModel = modelId
+            odh.clearObjectDetector() // consider doing this off the main thread
+            lastSwitchAtMs = nowMs
+            Log.d("ModelUpdate", "Switch -> $modelId (${nameOf(modelId)})")
+            return nameOf(modelId) to true
+        }
+        return nameOf(modelId) to false
+    }
+
+    private fun nameOf(id: Int): String = when (id) {
+        1 -> "EfficientDet Lite0"; 2 -> "EfficientDet Lite1"; 3 -> "EfficientDet Lite2"; else -> "MobileNet V1"
     }
 }

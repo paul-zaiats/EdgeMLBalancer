@@ -220,7 +220,7 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener {
     }
 
     private fun getSelectedModel(): String {
-        val modelBasedOnCriteria = modelSelector.getModelBasedOnCriteria()
+        val modelBasedOnCriteria = modelSelector.chooseNextModel()
         if (modelBasedOnCriteria.second) {
             updateControlsUi()
         }

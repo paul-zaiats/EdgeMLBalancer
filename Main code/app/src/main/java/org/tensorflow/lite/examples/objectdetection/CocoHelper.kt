@@ -69,12 +69,8 @@ class CocoHelper(
     }
 
     fun scanImages() {
-        val timeStatsCollector = TimeStatsCollector(context, 35_000_000)
-
 //        runBaseModels(timeStatsCollector)
-        runHybrid(timeStatsCollector)
-
-        timeStatsCollector.logResults()
+        runHybrid()
     }
 
     private fun runBaseModels(timeStatsCollector: TimeStatsCollector) {
@@ -82,8 +78,8 @@ class CocoHelper(
             val helper = helper(modelIndex)
             context.assets.list("val2017")?.forEach { img ->
                 val imageId = cocoImageIdFromFilename(img)
-                val latency = helper.detect(loadImage("val2017/$img"), 0, imageId)
-                timeStatsCollector.record(modelIndex, latency)
+                val res = helper.detect(loadImage("val2017/$img"), 0, imageId)
+                timeStatsCollector.record(modelIndex, res.first)
             }
             createLogFile(modelIndex)
             writeToLogFile(allDetections.toString(4))
@@ -91,19 +87,16 @@ class CocoHelper(
         }
     }
 
-    private fun runHybrid(timeStatsCollector: TimeStatsCollector) {
+    private fun runHybrid() {
         val helper = helper(0)
         val modelSelector = ModelSelector(helper)
-        var lastModelUpdateTime = System.currentTimeMillis()
         context.assets.list("val2017")?.forEach { img ->
-            if (lastModelUpdateTime + 1000 >= System.currentTimeMillis()) {
-                modelSelector.getModelBasedOnCriteria()
-                lastModelUpdateTime = System.currentTimeMillis()
-            }
+            modelSelector.chooseNextModel()
             val imageId = cocoImageIdFromFilename(img)
-            val latency = helper.detect(loadImage("val2017/$img"), 0, imageId)
-            timeStatsCollector.record(helper.currentModel, latency)
+            val res = helper.detect(loadImage("val2017/$img"), 0, imageId)
+            modelSelector.updateMetrics(helper.currentModel, res.first, res.second)
         }
+        modelSelector.timeStatsCollector.logResults()
         createLogFile(999)
         writeToLogFile(allDetections.toString(4))
         allDetections = JSONArray()

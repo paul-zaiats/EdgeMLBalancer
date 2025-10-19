@@ -110,7 +110,7 @@ class ObjectDetectorHelper(
         }
     }
 
-    fun detect(image: Bitmap, imageRotation: Int, imageId: Int? = null): Long {
+    fun detect(image: Bitmap, imageRotation: Int, imageId: Int? = null): Pair<Long, Double> {
         if (objectDetector == null) {
             setupObjectDetector()
         }
@@ -137,6 +137,11 @@ class ObjectDetectorHelper(
 
         val results = objectDetector?.detect(tensorImage)
         inferenceTime = SystemClock.elapsedRealtimeNanos() - inferenceTime
+        val avgConf: Double = results!!
+            .mapNotNull { it.categories.maxByOrNull { c -> c.score }?.score }
+            .takeIf { it.isNotEmpty() }
+            ?.average()
+            ?: 0.0
 
         if (imageId == null) {
             objectDetectorListener?.onResults(
@@ -151,7 +156,7 @@ class ObjectDetectorHelper(
                 tensorImage.width,
                 imageId)
         }
-        return inferenceTime
+        return Pair(inferenceTime, avgConf)
     }
 
     interface DetectorListener {
