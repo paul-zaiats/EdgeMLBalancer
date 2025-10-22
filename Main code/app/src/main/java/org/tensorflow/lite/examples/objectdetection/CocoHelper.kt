@@ -69,11 +69,12 @@ class CocoHelper(
     }
 
     fun scanImages() {
-//        runBaseModels(timeStatsCollector)
+//        runBaseModels()
         runHybrid()
     }
 
-    private fun runBaseModels(timeStatsCollector: TimeStatsCollector) {
+    private fun runBaseModels() {
+        val timeStatsCollector = TimeStatsCollector(context, 35 * 1_000_000L)
         (0..3).forEach { modelIndex ->
             val helper = helper(modelIndex)
             context.assets.list("val2017")?.forEach { img ->
@@ -85,6 +86,7 @@ class CocoHelper(
             writeToLogFile(allDetections.toString(4))
             allDetections = JSONArray()
         }
+        timeStatsCollector.logResults()
     }
 
     private fun runHybrid() {

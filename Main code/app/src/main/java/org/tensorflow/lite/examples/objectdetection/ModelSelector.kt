@@ -35,10 +35,12 @@ class ModelSelector(private val odh: ObjectDetectorHelper) {
     fun updateMetrics(modelId: Int, latencyNs: Long, avgConfThisFrame: Double) {
         val latencyMs = latencyNs / 1_000_000
         val s = stats[modelId]
-        s.emaLatencyMs = if (s.seen == 0) latencyMs.toDouble() else (1 - alphaLatency) * s.emaLatencyMs + alphaLatency * latencyMs
-        s.emaConf     = if (s.seen == 0) avgConfThisFrame else (1 - alphaConf) * s.emaConf + alphaConf * avgConfThisFrame
+        s.emaLatencyMs =
+            if (s.seen == 0) latencyMs.toDouble() else (1 - alphaLatency) * s.emaLatencyMs + alphaLatency * latencyMs
+        s.emaConf =
+            if (s.seen == 0) avgConfThisFrame else (1 - alphaConf) * s.emaConf + alphaConf * avgConfThisFrame
         val miss = if (latencyMs > deadlineMs) 1.0 else 0.0
-        s.emaDMR      = if (s.seen == 0) miss else (1 - alphaDMR) * s.emaDMR + alphaDMR * miss
+        s.emaDMR = if (s.seen == 0) miss else (1 - alphaDMR) * s.emaDMR + alphaDMR * miss
         s.seen++
 
         timeStatsCollector.record(modelId, latencyNs)
