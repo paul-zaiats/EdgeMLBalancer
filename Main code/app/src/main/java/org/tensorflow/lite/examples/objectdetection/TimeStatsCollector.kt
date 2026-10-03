@@ -15,10 +15,6 @@ class TimeStatsCollector(private val context: Context, private val deadlineNs: L
 
     private var logFile: File? = null
 
-    init {
-        createLogFile()
-    }
-
     val lowestDiscernibleNs = 1_000L // 1 µs in ns
     val highestTrackableNs = TimeUnit.MINUTES.toNanos(1)
     val sigDigits = 3
@@ -43,7 +39,8 @@ class TimeStatsCollector(private val context: Context, private val deadlineNs: L
         histAll.recordValue(latencyNano)
     }
 
-    fun logResults() {
+    fun logResults(fileName: String) {
+        createLogFile(fileName)
         val timestamp = getCurrentTimestamp()
         Log.d("StatsHelper", "Log timings")
 
@@ -63,7 +60,7 @@ class TimeStatsCollector(private val context: Context, private val deadlineNs: L
                 modelName = "All Models"
             }
             val logMessage =
-                "$timestamp,${modelName},${it.totalCount},${s.avgNs},${s.median},${s.p99},${s.p999},${s.dmr},${s.wcet}" // Updated log message
+                "$timestamp,${modelName},${it.totalCount},${s.avgNs},${s.median},${s.p95},${s.p99},${s.p999},${s.dmr},${s.wcet}" // Updated log message
             writeToLogFile(logMessage)
         }
     }
@@ -73,8 +70,7 @@ class TimeStatsCollector(private val context: Context, private val deadlineNs: L
         return dateFormat.format(Date())
     }
 
-    private fun createLogFile() {
-        val fileName = "time_log_${System.currentTimeMillis()}.csv"
+    private fun createLogFile(fileName: String) {
         val directory = context.getExternalFilesDir(null)
 
         logFile = if (directory != null) {
@@ -83,7 +79,7 @@ class TimeStatsCollector(private val context: Context, private val deadlineNs: L
             File(context.filesDir, fileName)
         }
 
-        writeToLogFile("Timestamp,SelectedModel,TotalCount,AverageLatency,MedianLatency,p99Latency,p999Latency,DeadlineMissRatio,WorstCaseExecutionTime")
+        writeToLogFile("Timestamp,SelectedModel,TotalCount,AverageLatency,MedianLatency,p95Latency,p99Latency,p999Latency,DeadlineMissRatio,WorstCaseExecutionTime")
     }
 
     private fun writeToLogFile(message: String) {
@@ -102,6 +98,7 @@ class TimeStatsCollector(private val context: Context, private val deadlineNs: L
     fun getStats(hist: Histogram): Stats {
         val avgNs = hist.mean.toLong()
         val median = hist.getValueAtPercentile(50.0)
+        val p95 = hist.getValueAtPercentile(95.0)
         val p99 = hist.getValueAtPercentile(99.0)
         val p999 = hist.getValueAtPercentile(99.9)
         val wcet = hist.maxValue
@@ -110,12 +107,13 @@ class TimeStatsCollector(private val context: Context, private val deadlineNs: L
         val total = hist.totalCount
         val dmr = misses.toDouble() / total.toDouble()
 
-        return Stats(avgNs, median, p99, p999, wcet, dmr)
+        return Stats(avgNs, median, p95, p99, p999, wcet, dmr)
     }
 
     data class Stats(
         val avgNs: Long,
         val median: Long,
+        val p95: Long,
         val p99: Long,
         val p999: Long,
         val wcet: Long,

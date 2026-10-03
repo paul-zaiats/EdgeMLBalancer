@@ -1,106 +1,206 @@
 package org.tensorflow.lite.examples.objectdetection
 
-import android.util.Log
+import kotlin.random.Random
 
 data class ModelStats(
     var emaLatencyMs: Double = 0.0,
     var emaConf: Double = 0.0,
-    var emaDMR: Double = 0.0,       // deadline miss ratio in [0,1]
-    var seen: Int = 0
+    var emaDMR: Double = 0.0,  // deadline miss ratio in [0,1]
+    var seen: Int = 0,
+    var lastMeasuredFrame: Long = -1
 )
 
-class ModelSelector(private val odh: ObjectDetectorHelper) {
+class ModelSelector(
+    private val odh: ObjectDetectorHelper,
+    val deadlineMs: Int = 50,
+    seed: Int = 42,
+    private val cooldownFrames: Int = 10,
+    private val recheckIntervalFrames: Int = 20,
+    private val initialSamplesPerModel: Int = 3,
+    // Порядок качества: от менее точной к более точной.
+    // TODO: уточнить его по mAP на отдельной калибровочной выборке.
+    private val qualityOrder: List<Int> = listOf(0, 1, 2, 3)
+) {
+    private val stats = Array(4) { ModelStats() }
+    private val random = Random(seed)
 
-    private val N_MODELS = 4 // 0: MV1, 1: E0, 2: E1, 3: E2
-    private val stats = Array(N_MODELS) { ModelStats() }
-
-    // RT params
-    var deadlineMs = 35
-    private val slack = 0.9                 // require 10% headroom
-    private val alphaLatency = 0.2            // EMA smoothing
+    private val slack = 0.9
+    private val alphaLatency = 0.2
     private val alphaConf = 0.1
     private val alphaDMR = 0.2
 
-    // switching guards
-    private var lastSwitchAtMs = 0L
-    private val switchCooldownMs = 1000L
+    private val epsilon = 0.02
 
-    // exploration
-    private var epsilon = 0.1
-    private val minEpsilon = 0.02
-    private val epsilonDecay = 0.9
+    private var completedFrames = 0L
+    private var lastSwitchFrame = -cooldownFrames.toLong()
+    private var lastProbeFrame = 0L
+    private var probePending = false
 
-    val timeStatsCollector = TimeStatsCollector(odh.context, deadlineMs * 1_000_000L)
+    val timeStatsCollector = TimeStatsCollector(
+        odh.context,
+        deadlineMs * 1_000_000L
+    )
 
-    fun updateMetrics(modelId: Int, latencyNs: Long, avgConfThisFrame: Double) {
-        val latencyMs = latencyNs / 1_000_000
+    init {
+        require(deadlineMs > 0)
+        require(cooldownFrames >= 0)
+        require(recheckIntervalFrames > 0)
+        require(initialSamplesPerModel > 0)
+        require(
+            qualityOrder.size == stats.size &&
+                    qualityOrder.toSet() == stats.indices.toSet()
+        )
+    }
+
+    /**
+     * Вызывается один раз перед инференсом.
+     * После него обязательно вызвать updateMetrics().
+     */
+    fun chooseNextModel(): Pair<String, Boolean> {
+        val current = odh.currentModel.coerceIn(stats.indices)
+
+        // Детерминированный старт: несколько измерений каждой модели.
+        // На этом этапе cooldown не применяется.
+        val unmeasured = qualityOrder.firstOrNull {
+            stats[it].seen < initialSamplesPerModel
+        }
+
+        if (unmeasured != null) {
+            return switchTo(unmeasured)
+        }
+
+        // После одиночной проверки сразу возвращаемся к обычной политике.
+        // Иначе cooldown удерживал бы нас на проверяемой модели.
+        if (probePending) {
+            probePending = false
+            return switchTo(bestFeasibleOrFastest())
+        }
+
+        // При нарушении ограничений текущей моделью переключаемся
+        // сразу, независимо от cooldown.
+        if (!isFeasible(current)) {
+            val next = bestFeasibleOrFastest()
+            if (next != current) {
+                return switchTo(next)
+            }
+        }
+
+        val cooldownPassed =
+            completedFrames - lastSwitchFrame >= cooldownFrames
+
+        if (!cooldownPassed) {
+            return nameOf(current) to false
+        }
+
+        // Проверяем модель с наиболее устаревшими измерениями.
+        // Проверка занимает один кадр и может нарушить дедлайн.
+        if (completedFrames - lastProbeFrame >= recheckIntervalFrames) {
+            val target = stats.indices
+                .filter { it != current }
+                .minByOrNull { stats[it].lastMeasuredFrame }
+
+            if (target != null) {
+                return startProbe(target)
+            }
+        }
+
+        // Дополнительное воспроизводимое исследование.
+        if (random.nextDouble() < epsilon) {
+            val alternatives = stats.indices.filter { it != current }
+            return startProbe(
+                alternatives[random.nextInt(alternatives.size)]
+            )
+        }
+
+        return switchTo(bestFeasibleOrFastest())
+    }
+
+    fun updateMetrics(
+        modelId: Int,
+        latencyNs: Long,
+        avgConfThisFrame: Double
+    ) {
+        require(modelId in stats.indices)
+        require(latencyNs >= 0)
+
+        val latencyMs = latencyNs / 1_000_000.0
+        val miss = if (latencyNs > deadlineMs * 1_000_000L) {
+            1.0
+        } else {
+            0.0
+        }
+
         val s = stats[modelId]
-        s.emaLatencyMs =
-            if (s.seen == 0) latencyMs.toDouble() else (1 - alphaLatency) * s.emaLatencyMs + alphaLatency * latencyMs
-        s.emaConf =
-            if (s.seen == 0) avgConfThisFrame else (1 - alphaConf) * s.emaConf + alphaConf * avgConfThisFrame
-        val miss = if (latencyMs > deadlineMs) 1.0 else 0.0
-        s.emaDMR = if (s.seen == 0) miss else (1 - alphaDMR) * s.emaDMR + alphaDMR * miss
+        val first = s.seen == 0
+
+        s.emaLatencyMs = if (first) {
+            latencyMs
+        } else {
+            (1 - alphaLatency) * s.emaLatencyMs +
+                    alphaLatency * latencyMs
+        }
+
+        if (avgConfThisFrame.isFinite()) {
+            s.emaConf = if (first) {
+                avgConfThisFrame
+            } else {
+                (1 - alphaConf) * s.emaConf +
+                        alphaConf * avgConfThisFrame
+            }
+        }
+
+        s.emaDMR = if (first) {
+            miss
+        } else {
+            (1 - alphaDMR) * s.emaDMR + alphaDMR * miss
+        }
+
         s.seen++
+        completedFrames++
+        s.lastMeasuredFrame = completedFrames
 
         timeStatsCollector.record(modelId, latencyNs)
     }
 
-    fun chooseNextModel(): Pair<String, Boolean> {
-        val nowMs = System.currentTimeMillis()
-
-        // Respect cooldown unless the current model violates the deadline badly
-        val cur = odh.currentModel.coerceIn(0, N_MODELS - 1)
-        val curOk = stats[cur].emaLatencyMs > 0 &&
-                stats[cur].emaLatencyMs <= slack * deadlineMs &&
-                stats[cur].emaDMR <= 0.05
-
-        if ((nowMs - lastSwitchAtMs) < switchCooldownMs && curOk) {
-            return nameOf(cur) to false
-        }
-
-        // ε-greedy exploration only if we have healthy slack
-        val healthy = stats.any { it.emaLatencyMs > 0 && it.emaLatencyMs <= slack * deadlineMs }
-        if (healthy && Math.random() < epsilon) {
-            epsilon = maxOf(minEpsilon, epsilon * epsilonDecay)
-            val pick = (0 until N_MODELS).random()
-            return switchTo(pick, nowMs)
-        }
-
-        // Pick the most accurate model that meets deadline+slack
-        val candidates = (0 until N_MODELS).filter {
-            val s = stats[it]
-            s.emaLatencyMs > 0 && s.emaLatencyMs <= slack * deadlineMs
-        }.sortedWith(compareBy { stats[it].emaLatencyMs })
-
-        val next = when {
-            candidates.isNotEmpty() -> candidates.last()
-            else -> fastestSeenModel() ?: cur // fallback
-        }
-
-        if (next == cur) {
-            return nameOf(cur) to false
-        }
-        return switchTo(next, nowMs)
+    private fun isFeasible(modelId: Int): Boolean {
+        val s = stats[modelId]
+        return s.seen > 0 &&
+                s.emaLatencyMs <= deadlineMs * slack &&
+                s.emaDMR <= 0.05
     }
 
-    private fun fastestSeenModel(): Int? =
-        (0 until N_MODELS)
-            .filter { stats[it].emaLatencyMs > 0 }
-            .minByOrNull { stats[it].emaLatencyMs }
-
-    private fun switchTo(modelId: Int, nowMs: Long): Pair<String, Boolean> {
-        if (odh.currentModel != modelId) {
-            odh.currentModel = modelId
-            odh.clearObjectDetector() // consider doing this off the main thread
-            lastSwitchAtMs = nowMs
-            Log.d("ModelUpdate", "Switch -> $modelId (${nameOf(modelId)})")
-            return nameOf(modelId) to true
-        }
-        return nameOf(modelId) to false
+    private fun bestFeasibleOrFastest(): Int {
+        // Выбираем по заданному порядку качества, а не по задержке.
+        return qualityOrder.lastOrNull { isFeasible(it) }
+            ?: stats.indices
+                .filter { stats[it].seen > 0 }
+                .minByOrNull { stats[it].emaLatencyMs }
+            ?: 0
     }
 
-    private fun nameOf(id: Int): String = when (id) {
-        1 -> "EfficientDet Lite0"; 2 -> "EfficientDet Lite1"; 3 -> "EfficientDet Lite2"; else -> "MobileNet V1"
+    private fun startProbe(modelId: Int): Pair<String, Boolean> {
+        lastProbeFrame = completedFrames
+        probePending = true
+        return switchTo(modelId)
+    }
+
+    private fun switchTo(modelId: Int): Pair<String, Boolean> {
+        if (odh.currentModel == modelId) {
+            return nameOf(modelId) to false
+        }
+
+        odh.currentModel = modelId
+        odh.clearObjectDetector()
+        lastSwitchFrame = completedFrames
+
+        return nameOf(modelId) to true
+    }
+
+    private fun nameOf(modelId: Int): String = when (modelId) {
+        0 -> "MobileNet V1"
+        1 -> "EfficientDet Lite0"
+        2 -> "EfficientDet Lite1"
+        3 -> "EfficientDet Lite2"
+        else -> error("Unknown model: $modelId")
     }
 }
