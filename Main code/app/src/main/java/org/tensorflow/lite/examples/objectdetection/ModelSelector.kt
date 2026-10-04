@@ -10,6 +10,19 @@ data class ModelStats(
     var lastMeasuredFrame: Long = -1
 )
 
+enum class SelectionPhase {
+    INITIALIZATION,
+    PROBE,
+    NORMAL
+}
+
+data class SelectionDecision(
+    val modelId: Int,
+    val switched: Boolean,
+    val phase: SelectionPhase,
+    val reason: String
+)
+
 class ModelSelector(
     private val odh: ObjectDetectorHelper,
     val deadlineMs: Int = 50,
@@ -56,32 +69,38 @@ class ModelSelector(
      * Вызывается один раз перед инференсом.
      * После него обязательно вызвать updateMetrics().
      */
-    fun chooseNextModel(): Pair<String, Boolean> {
+    fun chooseNextDecision(): SelectionDecision {
         val current = odh.currentModel.coerceIn(stats.indices)
 
-        // Детерминированный старт: несколько измерений каждой модели.
-        // На этом этапе cooldown не применяется.
         val unmeasured = qualityOrder.firstOrNull {
             stats[it].seen < initialSamplesPerModel
         }
 
         if (unmeasured != null) {
-            return switchTo(unmeasured)
+            return decide(
+                unmeasured,
+                SelectionPhase.INITIALIZATION,
+                "initial_samples"
+            )
         }
 
-        // После одиночной проверки сразу возвращаемся к обычной политике.
-        // Иначе cooldown удерживал бы нас на проверяемой модели.
         if (probePending) {
             probePending = false
-            return switchTo(bestFeasibleOrFastest())
+            return decide(
+                bestFeasibleOrFastest(),
+                SelectionPhase.NORMAL,
+                "after_probe"
+            )
         }
 
-        // При нарушении ограничений текущей моделью переключаемся
-        // сразу, независимо от cooldown.
         if (!isFeasible(current)) {
             val next = bestFeasibleOrFastest()
             if (next != current) {
-                return switchTo(next)
+                return decide(
+                    next,
+                    SelectionPhase.NORMAL,
+                    "current_not_feasible"
+                )
             }
         }
 
@@ -89,30 +108,66 @@ class ModelSelector(
             completedFrames - lastSwitchFrame >= cooldownFrames
 
         if (!cooldownPassed) {
-            return nameOf(current) to false
+            return decide(
+                current,
+                SelectionPhase.NORMAL,
+                "cooldown"
+            )
         }
 
-        // Проверяем модель с наиболее устаревшими измерениями.
-        // Проверка занимает один кадр и может нарушить дедлайн.
         if (completedFrames - lastProbeFrame >= recheckIntervalFrames) {
             val target = stats.indices
                 .filter { it != current }
                 .minByOrNull { stats[it].lastMeasuredFrame }
 
             if (target != null) {
-                return startProbe(target)
+                return startProbeDecision(target, "periodic_recheck")
             }
         }
 
-        // Дополнительное воспроизводимое исследование.
         if (random.nextDouble() < epsilon) {
             val alternatives = stats.indices.filter { it != current }
-            return startProbe(
-                alternatives[random.nextInt(alternatives.size)]
-            )
+            val target = alternatives[random.nextInt(alternatives.size)]
+            return startProbeDecision(target, "epsilon_exploration")
         }
 
-        return switchTo(bestFeasibleOrFastest())
+        return decide(
+            bestFeasibleOrFastest(),
+            SelectionPhase.NORMAL,
+            "best_feasible_or_fastest"
+        )
+    }
+
+    private fun startProbeDecision(
+        modelId: Int,
+        reason: String
+    ): SelectionDecision {
+        lastProbeFrame = completedFrames
+        probePending = true
+
+        return decide(modelId, SelectionPhase.PROBE, reason)
+    }
+
+    private fun decide(
+        modelId: Int,
+        phase: SelectionPhase,
+        reason: String
+    ): SelectionDecision {
+        val (_, switched) = switchTo(modelId)
+
+        return SelectionDecision(
+            modelId = modelId,
+            switched = switched,
+            phase = phase,
+            reason = reason
+        )
+    }
+
+    // Совместимость с существующими вызовами из CameraFragment.
+// Для каждого кадра вызывайте только один из двух методов выбора.
+    fun chooseNextModel(): Pair<String, Boolean> {
+        val decision = chooseNextDecision()
+        return nameOf(decision.modelId) to decision.switched
     }
 
     fun updateMetrics(
@@ -176,12 +231,6 @@ class ModelSelector(
                 .filter { stats[it].seen > 0 }
                 .minByOrNull { stats[it].emaLatencyMs }
             ?: 0
-    }
-
-    private fun startProbe(modelId: Int): Pair<String, Boolean> {
-        lastProbeFrame = completedFrames
-        probePending = true
-        return switchTo(modelId)
     }
 
     private fun switchTo(modelId: Int): Pair<String, Boolean> {

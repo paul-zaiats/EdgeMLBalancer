@@ -12,7 +12,6 @@ import org.tensorflow.lite.task.vision.detector.Detection
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
-import java.io.RandomAccessFile
 import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -39,7 +38,7 @@ class CocoHelper(context: Context) {
 
     private val deadlineNs = 50_000_000L
     private val warmupImageCount = 10
-    private val loadStabilizationMs = 3_000L
+    private val loadStabilizationMs = 5_000L
 
     private data class LoadScenario(
         val name: String,
@@ -139,33 +138,108 @@ class CocoHelper(context: Context) {
         writer: BufferedWriter,
         cpuSampler: CpuUsageSampler
     ) {
-        val modelOrder = MODEL_IDS.shuffled(Random("$runId:${scenario.name}:static".hashCode()))
+        val outputDir = appContext.getExternalFilesDir(null)
+            ?: appContext.filesDir
+
+        // Одинаковый порядок моделей для всех сценариев одного запуска.
+        val modelOrder = MODEL_IDS.shuffled(
+            Random("$runId:static".hashCode())
+        )
+
         for (modelId in modelOrder) {
             allDetections = JSONArray()
             val helper = createDetector(modelId)
-            warmUp(helper, images)
-            val stats = TimeStatsCollector(appContext, deadlineNs)
 
-            for (assetName in images) {
-                val imageId = cocoImageIdFromFilename(assetName)
-                val bitmap = loadImage(assetName)
-                try {
-                    val startedNs = SystemClock.elapsedRealtimeNanos()
-                    val (inferenceNs, confidence) = helper.detect(bitmap, 0, imageId)
-                    val callDurationNs = SystemClock.elapsedRealtimeNanos() - startedNs
-                    stats.record(modelId, inferenceNs)
-                    writeSample(
-                        writer, runId, scenario, "static", imageId, modelId,
-                        false, inferenceNs, callDurationNs, confidence, cpuSampler.latestPercent
-                    )
-                } finally {
-                    bitmap.recycle()
+            try {
+                warmUp(helper, images)
+
+                // Исключаем предсказания прогрева, если listener их сохранил.
+                allDetections = JSONArray()
+
+                val stats = TimeStatsCollector(appContext, deadlineNs)
+                val samplesFile = File(
+                    outputDir,
+                    "coco_frames_${runId}_${scenario.name}_static_m${modelId}.csv"
+                )
+
+                FrameCsvLogger(samplesFile).use { csv ->
+                    for ((frameIndex, assetName) in images.withIndex()) {
+                        val imageId = cocoImageIdFromFilename(assetName)
+                        val bitmap = loadImage(assetName)
+
+                        try {
+                            val cpuPercent =
+                                cpuSampler.latestPercent?.toDouble()
+
+                            val decision = SelectionDecision(
+                                modelId = modelId,
+                                switched = false,
+                                phase = SelectionPhase.NORMAL,
+                                reason = "fixed_model"
+                            )
+
+                            // Декодирование изображения в замер не входит.
+                            val startedNs = SystemClock.elapsedRealtimeNanos()
+                            val (inferenceNs, confidence) =
+                                helper.detect(bitmap, 0, imageId)
+                            val finishedNs = SystemClock.elapsedRealtimeNanos()
+
+                            val callDurationNs = finishedNs - startedNs
+
+                            stats.record(modelId, inferenceNs)
+
+                            csv.record(
+                                runId = runId,
+                                scenario = scenario.name,
+                                frameIndex = frameIndex,
+                                imageId = imageId,
+                                mode = "static",
+                                decision = decision,
+                                targetDutyCycle = scenario.dutyCycle,
+                                workerCount = scenario.workers,
+                                frameStartElapsedNs = startedNs,
+                                selectionDurationNs = 0L,
+                                inferenceNs = inferenceNs,
+                                detectCallDurationNs = callDurationNs,
+                                responseDurationNs = callDurationNs,
+                                deadlineNs = deadlineNs,
+                                confidence = confidence,
+                                processCpuPercentOneCore = cpuPercent
+                            )
+
+                            writeSample(
+                                writer,
+                                runId,
+                                scenario,
+                                "static",
+                                imageId,
+                                modelId,
+                                false,
+                                inferenceNs,
+                                callDurationNs,
+                                confidence,
+                                cpuPercent
+                            )
+                        } finally {
+                            bitmap.recycle()
+                        }
+                    }
                 }
-            }
 
-            stats.logResults("time_log_${runId}_${scenario.name}_static_m${modelId}.csv")
-            writePredictions(runId, scenario.name, "static", modelId, allDetections)
-            allDetections = JSONArray()
+                stats.logResults(
+                    "time_log_${runId}_${scenario.name}_static_m${modelId}.csv"
+                )
+                writePredictions(
+                    runId,
+                    scenario.name,
+                    "static",
+                    modelId,
+                    allDetections
+                )
+            } finally {
+                helper.clearObjectDetector()
+                allDetections = JSONArray()
+            }
         }
     }
 
@@ -176,43 +250,113 @@ class CocoHelper(context: Context) {
         writer: BufferedWriter,
         cpuSampler: CpuUsageSampler
     ) {
+        val outputDir = appContext.getExternalFilesDir(null)
+            ?: appContext.filesDir
+
         allDetections = JSONArray()
         val helper = createDetector(modelId = 0)
-        warmUp(helper, images)
-        val selector =  ModelSelector(
-            odh = helper,
-            deadlineMs = DEADLINE_MS,
-            seed = 42,
-            cooldownFrames = 10,
-            recheckIntervalFrames = 20,
-            initialSamplesPerModel = 3
-        )
 
-        for (assetName in images) {
-            val (_, switched) = selector.chooseNextModel()
-            val modelId = helper.currentModel
-            val imageId = cocoImageIdFromFilename(assetName)
-            val bitmap = loadImage(assetName)
-            try {
-                val startedNs = SystemClock.elapsedRealtimeNanos()
-                val (inferenceNs, confidence) = helper.detect(bitmap, 0, imageId)
-                val callDurationNs = SystemClock.elapsedRealtimeNanos() - startedNs
+        try {
+            warmUp(helper, images)
+            allDetections = JSONArray()
 
-                // The selector learns from the same timing definition used by its DMR logic.
-                selector.updateMetrics(modelId, inferenceNs, confidence)
-                writeSample(
-                    writer, runId, scenario, "hybrid", imageId, modelId, switched,
-                    inferenceNs, callDurationNs, confidence,
-                    cpuSampler.latestPercent
-                )
-            } finally {
-                bitmap.recycle()
+            val selector = ModelSelector(
+                odh = helper,
+                deadlineMs = DEADLINE_MS,
+                seed = 42,
+                cooldownFrames = 10,
+                recheckIntervalFrames = 20,
+                initialSamplesPerModel = 3
+            )
+
+            val samplesFile = File(
+                outputDir,
+                "coco_frames_${runId}_${scenario.name}_hybrid.csv"
+            )
+
+            FrameCsvLogger(samplesFile).use { csv ->
+                for ((frameIndex, assetName) in images.withIndex()) {
+                    val imageId = cocoImageIdFromFilename(assetName)
+                    val bitmap = loadImage(assetName)
+
+                    try {
+                        val cpuPercent =
+                            cpuSampler.latestPercent?.toDouble()
+
+                        // Замер включает выбор модели и весь detect().
+                        val startedNs = SystemClock.elapsedRealtimeNanos()
+
+                        val decision = selector.chooseNextDecision()
+                        val selectionEndNs =
+                            SystemClock.elapsedRealtimeNanos()
+
+                        val (inferenceNs, confidence) =
+                            helper.detect(bitmap, 0, imageId)
+                        val finishedNs =
+                            SystemClock.elapsedRealtimeNanos()
+
+                        val selectionDurationNs = selectionEndNs - startedNs
+                        val callDurationNs = finishedNs - selectionEndNs
+                        val responseDurationNs = finishedNs - startedNs
+
+                        selector.updateMetrics(
+                            modelId = decision.modelId,
+                            latencyNs = inferenceNs,
+                            avgConfThisFrame = confidence
+                        )
+
+                        csv.record(
+                            runId = runId,
+                            scenario = scenario.name,
+                            frameIndex = frameIndex,
+                            imageId = imageId,
+                            mode = "hybrid",
+                            decision = decision,
+                            targetDutyCycle = scenario.dutyCycle,
+                            workerCount = scenario.workers,
+                            frameStartElapsedNs = startedNs,
+                            selectionDurationNs = selectionDurationNs,
+                            inferenceNs = inferenceNs,
+                            detectCallDurationNs = callDurationNs,
+                            responseDurationNs = responseDurationNs,
+                            deadlineNs = deadlineNs,
+                            confidence = confidence,
+                            processCpuPercentOneCore = cpuPercent
+                        )
+
+                        writeSample(
+                            writer,
+                            runId,
+                            scenario,
+                            "hybrid",
+                            imageId,
+                            decision.modelId,
+                            decision.switched,
+                            inferenceNs,
+                            callDurationNs,
+                            confidence,
+                            cpuPercent
+                        )
+                    } finally {
+                        bitmap.recycle()
+                    }
+                }
             }
-        }
 
-        selector.timeStatsCollector.logResults("time_log_${runId}_${scenario.name}_hybrid_m${MODEL_HYBRID}.csv")
-        writePredictions(runId, scenario.name, "hybrid", MODEL_HYBRID, allDetections)
-        allDetections = JSONArray()
+            selector.timeStatsCollector.logResults(
+                "time_log_${runId}_${scenario.name}_hybrid_m${MODEL_HYBRID}.csv"
+            )
+            writePredictions(
+                runId,
+                scenario.name,
+                "hybrid",
+                MODEL_HYBRID,
+                allDetections
+            )
+        } finally {
+            helper.clearObjectDetector()
+            allDetections = JSONArray()
+        }
     }
 
     private fun warmUp(helper: ObjectDetectorHelper, images: List<String>) {
@@ -275,7 +419,7 @@ class CocoHelper(context: Context) {
         inferenceNs: Long,
         callDurationNs: Long,
         confidence: Double,
-        cpuPercent: Float?
+        cpuPercent: Double?
     ) {
         val miss = inferenceNs > deadlineNs
         writer.appendLine(
