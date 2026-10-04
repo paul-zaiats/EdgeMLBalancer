@@ -15,7 +15,9 @@ class FrameCsvLogger(file: File) : Closeable {
                     "frameStartElapsedNs,selectionDurationNs," +
                     "inferenceNs,detectCallDurationNs,responseDurationNs," +
                     "deadlineNs,inferenceDeadlineMiss,responseDeadlineMiss," +
-                    "confidence,processCpuPercentOneCore"
+                    "confidence,processCpuPercentOneCore," +
+                    "warmupDurationNs,emaLatencyMsBefore,windowDMRBefore," +
+                    "observationsBefore,windowSamplesBefore"
         )
     }
 
@@ -35,7 +37,8 @@ class FrameCsvLogger(file: File) : Closeable {
         responseDurationNs: Long,
         deadlineNs: Long,
         confidence: Double,
-        processCpuPercentOneCore: Double?
+        processCpuPercentOneCore: Double?,
+        warmupDurationNs: Long = 0L
     ) {
         val values = listOf(
             runId,
@@ -58,7 +61,12 @@ class FrameCsvLogger(file: File) : Closeable {
             (inferenceNs > deadlineNs).toString(),
             (responseDurationNs > deadlineNs).toString(),
             number(confidence),
-            processCpuPercentOneCore?.let(::number).orEmpty()
+            processCpuPercentOneCore?.let(::number).orEmpty(),
+            warmupDurationNs.toString(),
+            decision.emaLatencyMsBefore?.let(::number).orEmpty(),
+            decision.windowDMRBefore?.let(::number).orEmpty(),
+            decision.observationsBefore.toString(),
+            decision.windowSamplesBefore.toString()
         )
 
         writer.appendLine(values.joinToString(",") { escape(it) })

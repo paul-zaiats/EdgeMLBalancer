@@ -1,14 +1,22 @@
 package org.tensorflow.lite.examples.objectdetection
 
+import java.util.ArrayDeque
 import kotlin.random.Random
 
 data class ModelStats(
     var emaLatencyMs: Double = 0.0,
     var emaConf: Double = 0.0,
-    var emaDMR: Double = 0.0,  // deadline miss ratio in [0,1]
     var seen: Int = 0,
-    var lastMeasuredFrame: Long = -1
-)
+    var lastMeasuredFrame: Long = -1,
+    val recentMisses: ArrayDeque<Boolean> = ArrayDeque<Boolean>()
+) {
+    val windowDMR: Double
+        get() = if (recentMisses.isEmpty()) {
+            0.0
+        } else {
+            recentMisses.count { it }.toDouble() / recentMisses.size
+        }
+}
 
 enum class SelectionPhase {
     INITIALIZATION,
@@ -20,7 +28,11 @@ data class SelectionDecision(
     val modelId: Int,
     val switched: Boolean,
     val phase: SelectionPhase,
-    val reason: String
+    val reason: String,
+    val emaLatencyMsBefore: Double? = null,
+    val windowDMRBefore: Double? = null,
+    val observationsBefore: Int = 0,
+    val windowSamplesBefore: Int = 0
 )
 
 class ModelSelector(
@@ -40,7 +52,11 @@ class ModelSelector(
     private val slack = 0.9
     private val alphaLatency = 0.2
     private val alphaConf = 0.1
-    private val alphaDMR = 0.2
+
+    // Пять последних наблюдений каждой модели.
+    // После пяти успешных измерений прежний пропуск выходит из окна.
+    private val dmrWindowSize = 5
+    private val maxWindowDMR = 0.05
 
     private val epsilon = 0.02
 
@@ -148,21 +164,6 @@ class ModelSelector(
         return decide(modelId, SelectionPhase.PROBE, reason)
     }
 
-    private fun decide(
-        modelId: Int,
-        phase: SelectionPhase,
-        reason: String
-    ): SelectionDecision {
-        val (_, switched) = switchTo(modelId)
-
-        return SelectionDecision(
-            modelId = modelId,
-            switched = switched,
-            phase = phase,
-            reason = reason
-        )
-    }
-
     // Совместимость с существующими вызовами из CameraFragment.
 // Для каждого кадра вызывайте только один из двух методов выбора.
     fun chooseNextModel(): Pair<String, Boolean> {
@@ -178,15 +179,9 @@ class ModelSelector(
         require(modelId in stats.indices)
         require(latencyNs >= 0)
 
-        val latencyMs = latencyNs / 1_000_000.0
-        val miss = if (latencyNs > deadlineMs * 1_000_000L) {
-            1.0
-        } else {
-            0.0
-        }
-
         val s = stats[modelId]
         val first = s.seen == 0
+        val latencyMs = latencyNs / 1_000_000.0
 
         s.emaLatencyMs = if (first) {
             latencyMs
@@ -204,10 +199,12 @@ class ModelSelector(
             }
         }
 
-        s.emaDMR = if (first) {
-            miss
-        } else {
-            (1 - alphaDMR) * s.emaDMR + alphaDMR * miss
+        s.recentMisses.addLast(
+            latencyNs > deadlineMs * 1_000_000L
+        )
+
+        while (s.recentMisses.size > dmrWindowSize) {
+            s.recentMisses.removeFirst()
         }
 
         s.seen++
@@ -219,9 +216,37 @@ class ModelSelector(
 
     private fun isFeasible(modelId: Int): Boolean {
         val s = stats[modelId]
-        return s.seen > 0 &&
+
+        return s.seen >= initialSamplesPerModel &&
                 s.emaLatencyMs <= deadlineMs * slack &&
-                s.emaDMR <= 0.05
+                s.windowDMR <= maxWindowDMR
+    }
+
+    private fun decide(
+        modelId: Int,
+        phase: SelectionPhase,
+        reason: String
+    ): SelectionDecision {
+        val s = stats[modelId]
+
+        // Снимок статистики до инференса текущего кадра.
+        val latencyBefore = s.emaLatencyMs.takeIf { s.seen > 0 }
+        val dmrBefore = s.windowDMR.takeIf { s.seen > 0 }
+        val observationsBefore = s.seen
+        val windowSamplesBefore = s.recentMisses.size
+
+        val (_, switched) = switchTo(modelId)
+
+        return SelectionDecision(
+            modelId = modelId,
+            switched = switched,
+            phase = phase,
+            reason = reason,
+            emaLatencyMsBefore = latencyBefore,
+            windowDMRBefore = dmrBefore,
+            observationsBefore = observationsBefore,
+            windowSamplesBefore = windowSamplesBefore
+        )
     }
 
     private fun bestFeasibleOrFastest(): Int {

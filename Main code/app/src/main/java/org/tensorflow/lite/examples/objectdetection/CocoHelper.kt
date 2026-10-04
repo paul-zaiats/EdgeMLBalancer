@@ -253,11 +253,9 @@ class CocoHelper(context: Context) {
         val outputDir = appContext.getExternalFilesDir(null)
             ?: appContext.filesDir
 
-        allDetections = JSONArray()
         val helper = createDetector(modelId = 0)
 
         try {
-            warmUp(helper, images)
             allDetections = JSONArray()
 
             val selector = ModelSelector(
@@ -274,6 +272,11 @@ class CocoHelper(context: Context) {
                 "coco_frames_${runId}_${scenario.name}_hybrid.csv"
             )
 
+            val initializedModels = mutableSetOf<Int>()
+
+            // Одно изображение используется для прогрева всех моделей.
+            val warmupAsset = images.firstOrNull()
+
             FrameCsvLogger(samplesFile).use { csv ->
                 for ((frameIndex, assetName) in images.withIndex()) {
                     val imageId = cocoImageIdFromFilename(assetName)
@@ -283,20 +286,54 @@ class CocoHelper(context: Context) {
                         val cpuPercent =
                             cpuSampler.latestPercent?.toDouble()
 
-                        // Замер включает выбор модели и весь detect().
                         val startedNs = SystemClock.elapsedRealtimeNanos()
-
                         val decision = selector.chooseNextDecision()
-                        val selectionEndNs =
-                            SystemClock.elapsedRealtimeNanos()
+                        val selectionEndNs = SystemClock.elapsedRealtimeNanos()
+
+                        var warmupDurationNs = 0L
+
+                        if (
+                            decision.phase == SelectionPhase.INITIALIZATION &&
+                            decision.modelId !in initializedModels
+                        ) {
+                            val warmupStartedNs = SystemClock.elapsedRealtimeNanos()
+
+                            if (warmupAsset != null) {
+                                val warmupBitmap = loadImage(warmupAsset)
+
+                                // Защищаем предсказания уже измеренных кадров от записей прогрева.
+                                val measuredDetections = allDetections
+                                allDetections = JSONArray()
+
+                                try {
+                                    repeat(10) {
+                                        // imageId отсутствует: это прогрев, не оценочный кадр.
+                                        helper.detect(warmupBitmap, 0)
+                                    }
+                                } finally {
+                                    allDetections = measuredDetections
+                                    warmupBitmap.recycle()
+                                }
+                            }
+
+                            initializedModels.add(decision.modelId)
+                            warmupDurationNs =
+                                SystemClock.elapsedRealtimeNanos() - warmupStartedNs
+                        }
+
+                        // Отдельная граница: detectCallDurationNs не включает прогрев.
+                        val detectStartedNs = SystemClock.elapsedRealtimeNanos()
 
                         val (inferenceNs, confidence) =
                             helper.detect(bitmap, 0, imageId)
-                        val finishedNs =
-                            SystemClock.elapsedRealtimeNanos()
+
+                        val finishedNs = SystemClock.elapsedRealtimeNanos()
 
                         val selectionDurationNs = selectionEndNs - startedNs
-                        val callDurationNs = finishedNs - selectionEndNs
+                        val callDurationNs = finishedNs - detectStartedNs
+
+                        // Время ответа включает начальный прогрев.
+                        // Поэтому его стоимость остаётся видна в CSV.
                         val responseDurationNs = finishedNs - startedNs
 
                         selector.updateMetrics(
@@ -321,7 +358,8 @@ class CocoHelper(context: Context) {
                             responseDurationNs = responseDurationNs,
                             deadlineNs = deadlineNs,
                             confidence = confidence,
-                            processCpuPercentOneCore = cpuPercent
+                            processCpuPercentOneCore = cpuPercent,
+                            warmupDurationNs = warmupDurationNs
                         )
 
                         writeSample(
