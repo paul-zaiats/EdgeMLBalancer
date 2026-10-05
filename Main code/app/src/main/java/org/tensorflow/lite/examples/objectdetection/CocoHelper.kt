@@ -48,7 +48,7 @@ class CocoHelper(context: Context) {
 
     private val loadScenarios = listOf(
         LoadScenario("idle", workers = 0, dutyCycle = 0.0),
-        LoadScenario("cpu_w8_d75", workers = 8, dutyCycle = 0.75)
+//        LoadScenario("cpu_w8_d75", workers = 8, dutyCycle = 0.75)
     )
 
     /** Starts the complete campaign away from the main/UI thread. */
@@ -121,11 +121,13 @@ class CocoHelper(context: Context) {
             }
             Thread.sleep(loadStabilizationMs)
 
-            val phases = listOf<() -> Unit>(
-                { runStaticModels(runId, activeScenario, images, writer, cpuSampler) },
-                { runHybrid(runId, activeScenario, images, writer, cpuSampler) }
-            )
-            phases.shuffled(Random("$runId:${scenario.name}".hashCode())).forEach { it() }
+            ThermalSampler(appContext).use { thermalSampler ->
+                val phases = listOf<() -> Unit>(
+    //                { runStaticModels(runId, activeScenario, images, writer, cpuSampler, thermalSampler) },
+                    { runHybrid(runId, activeScenario, images, writer, cpuSampler, thermalSampler) }
+                )
+                phases.shuffled(Random("$runId:${scenario.name}".hashCode())).forEach { it() }
+            }
         } finally {
             generator.stop()
         }
@@ -136,7 +138,8 @@ class CocoHelper(context: Context) {
         scenario: LoadScenario,
         images: List<String>,
         writer: BufferedWriter,
-        cpuSampler: CpuUsageSampler
+        cpuSampler: CpuUsageSampler,
+        thermalSampler: ThermalSampler
     ) {
         val outputDir = appContext.getExternalFilesDir(null)
             ?: appContext.filesDir
@@ -179,6 +182,7 @@ class CocoHelper(context: Context) {
                             )
 
                             // Декодирование изображения в замер не входит.
+                            val thermalBeforeFrame = thermalSampler.latest
                             val startedNs = SystemClock.elapsedRealtimeNanos()
                             val (inferenceNs, confidence) =
                                 helper.detect(bitmap, 0, imageId)
@@ -204,7 +208,8 @@ class CocoHelper(context: Context) {
                                 responseDurationNs = callDurationNs,
                                 deadlineNs = deadlineNs,
                                 confidence = confidence,
-                                processCpuPercentOneCore = cpuPercent
+                                processCpuPercentOneCore = cpuPercent,
+                                thermal = thermalBeforeFrame
                             )
 
                             writeSample(
@@ -248,7 +253,8 @@ class CocoHelper(context: Context) {
         scenario: LoadScenario,
         images: List<String>,
         writer: BufferedWriter,
-        cpuSampler: CpuUsageSampler
+        cpuSampler: CpuUsageSampler,
+        thermalSampler: ThermalSampler
     ) {
         val outputDir = appContext.getExternalFilesDir(null)
             ?: appContext.filesDir
@@ -261,7 +267,6 @@ class CocoHelper(context: Context) {
             val selector = ModelSelector(
                 odh = helper,
                 deadlineMs = DEADLINE_MS,
-                seed = 42,
                 cooldownFrames = 10,
                 recheckIntervalFrames = 20,
                 initialSamplesPerModel = 3
@@ -286,6 +291,7 @@ class CocoHelper(context: Context) {
                         val cpuPercent =
                             cpuSampler.latestPercent?.toDouble()
 
+                        val thermalBeforeFrame = thermalSampler.latest
                         val startedNs = SystemClock.elapsedRealtimeNanos()
                         val decision = selector.chooseNextDecision()
                         val selectionEndNs = SystemClock.elapsedRealtimeNanos()
@@ -359,7 +365,8 @@ class CocoHelper(context: Context) {
                             deadlineNs = deadlineNs,
                             confidence = confidence,
                             processCpuPercentOneCore = cpuPercent,
-                            warmupDurationNs = warmupDurationNs
+                            warmupDurationNs = warmupDurationNs,
+                            thermal = thermalBeforeFrame
                         )
 
                         writeSample(
@@ -565,7 +572,7 @@ class CocoHelper(context: Context) {
 
     private companion object {
         const val TAG = "CocoHelper"
-        const val COCO_ASSET_DIR = "val2017_100"
+        const val COCO_ASSET_DIR = "val2017"
         const val SCORE_THRESHOLD = 0.05f
         const val MAX_RESULTS = 100
         const val DEADLINE_MS = 50

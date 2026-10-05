@@ -38,7 +38,6 @@ data class SelectionDecision(
 class ModelSelector(
     private val odh: ObjectDetectorHelper,
     val deadlineMs: Int = 50,
-    seed: Int = 42,
     private val cooldownFrames: Int = 10,
     private val recheckIntervalFrames: Int = 20,
     private val initialSamplesPerModel: Int = 3,
@@ -47,7 +46,6 @@ class ModelSelector(
     private val qualityOrder: List<Int> = listOf(0, 1, 2, 3)
 ) {
     private val stats = Array(4) { ModelStats() }
-    private val random = Random(seed)
 
     private val slack = 0.9
     private val alphaLatency = 0.2
@@ -58,12 +56,33 @@ class ModelSelector(
     private val dmrWindowSize = 5
     private val maxWindowDMR = 0.05
 
-    private val epsilon = 0.02
-
     private var completedFrames = 0L
     private var lastSwitchFrame = -cooldownFrames.toLong()
-    private var lastProbeFrame = 0L
-    private var probePending = false
+
+    private data class RecoveryState(
+        var intervalFrames: Long,
+        var nextCheckFrame: Long = 0L
+    )
+
+    private val recovery = Array(stats.size) {
+        RecoveryState(
+            intervalFrames = recheckIntervalFrames.toLong()
+        )
+    }
+
+    private val recoverySuccessFrames = 5
+    private val maxRecoveryIntervalFrames =
+        maxOf(160L, recheckIntervalFrames.toLong())
+
+    private var activeProbeModel: Int? = null
+    private var probeSuccessCount = 0
+    private var returnAfterProbe = false
+    private var initializationFinished = false
+
+    // Каждая четвёртая серия проверяет наиболее давно измеренную
+    // альтернативу, чтобы остальные модели тоже получали наблюдения.
+    private var probeSeriesCount = 0
+
 
     val timeStatsCollector = TimeStatsCollector(
         odh.context,
@@ -88,6 +107,7 @@ class ModelSelector(
     fun chooseNextDecision(): SelectionDecision {
         val current = odh.currentModel.coerceIn(stats.indices)
 
+        // Начальные измерения всех моделей.
         val unmeasured = qualityOrder.firstOrNull {
             stats[it].seen < initialSamplesPerModel
         }
@@ -100,17 +120,41 @@ class ModelSelector(
             )
         }
 
-        if (probePending) {
-            probePending = false
+        if (!initializationFinished) {
+            initializationFinished = true
+
+            recovery.forEach {
+                it.nextCheckFrame =
+                    completedFrames + it.intervalFrames
+            }
+        }
+
+        // Серия закончилась: повторяем обычный выбор.
+        // cooldown здесь не мешает уйти с проверяемой модели.
+        if (returnAfterProbe) {
+            returnAfterProbe = false
+
             return decide(
                 bestFeasibleOrFastest(),
                 SelectionPhase.NORMAL,
-                "after_probe"
+                "after_recovery_series"
             )
         }
 
+        // Продолжаем проверять ту же модель без переключений.
+        activeProbeModel?.let { modelId ->
+            return decide(
+                modelId,
+                SelectionPhase.PROBE,
+                "recovery_series_continue"
+            )
+        }
+
+        // При нарушении ограничений текущей моделью
+        // сразу выбираем подходящую альтернативу.
         if (!isFeasible(current)) {
             val next = bestFeasibleOrFastest()
+
             if (next != current) {
                 return decide(
                     next,
@@ -131,20 +175,18 @@ class ModelSelector(
             )
         }
 
-        if (completedFrames - lastProbeFrame >= recheckIntervalFrames) {
-            val target = stats.indices
-                .filter { it != current }
-                .minByOrNull { stats[it].lastMeasuredFrame }
+        val target = chooseRecoveryTarget(current)
 
-            if (target != null) {
-                return startProbeDecision(target, "periodic_recheck")
-            }
-        }
+        if (target != null) {
+            activeProbeModel = target
+            probeSuccessCount = 0
+            probeSeriesCount++
 
-        if (random.nextDouble() < epsilon) {
-            val alternatives = stats.indices.filter { it != current }
-            val target = alternatives[random.nextInt(alternatives.size)]
-            return startProbeDecision(target, "epsilon_exploration")
+            return decide(
+                target,
+                SelectionPhase.PROBE,
+                "recovery_series_start"
+            )
         }
 
         return decide(
@@ -154,18 +196,60 @@ class ModelSelector(
         )
     }
 
-    private fun startProbeDecision(
-        modelId: Int,
-        reason: String
-    ): SelectionDecision {
-        lastProbeFrame = completedFrames
-        probePending = true
+    private fun chooseRecoveryTarget(current: Int): Int? {
+        val due = qualityOrder.filter { modelId ->
+            modelId != current &&
+                    completedFrames >= recovery[modelId].nextCheckFrame
+        }
 
-        return decide(modelId, SelectionPhase.PROBE, reason)
+        if (due.isEmpty()) {
+            return null
+        }
+
+        // Периодическая проверка остальных моделей.
+        if ((probeSeriesCount + 1) % 4 == 0) {
+            return due.minByOrNull {
+                stats[it].lastMeasuredFrame
+            }
+        }
+
+        val currentRank = qualityOrder.indexOf(current)
+
+        // Ближайшая более качественная модель,
+        // для которой уже наступил срок проверки.
+        val upgrade = due.firstOrNull {
+            qualityOrder.indexOf(it) > currentRank
+        }
+
+        return upgrade ?: due.minByOrNull {
+            stats[it].lastMeasuredFrame
+        }
+    }
+
+    private fun finishRecoverySeries(
+        modelId: Int,
+        successful: Boolean
+    ) {
+        val state = recovery[modelId]
+
+        state.intervalFrames = if (successful) {
+            recheckIntervalFrames.toLong()
+        } else {
+            minOf(
+                state.intervalFrames * 2,
+                maxRecoveryIntervalFrames
+            )
+        }
+
+        state.nextCheckFrame = completedFrames + state.intervalFrames
+
+        activeProbeModel = null
+        probeSuccessCount = 0
+        returnAfterProbe = true
     }
 
     // Совместимость с существующими вызовами из CameraFragment.
-// Для каждого кадра вызывайте только один из двух методов выбора.
+    // Для каждого кадра вызывайте только один из двух методов выбора.
     fun chooseNextModel(): Pair<String, Boolean> {
         val decision = chooseNextDecision()
         return nameOf(decision.modelId) to decision.switched
@@ -179,9 +263,17 @@ class ModelSelector(
         require(modelId in stats.indices)
         require(latencyNs >= 0)
 
+        activeProbeModel?.let {
+            check(modelId == it) {
+                "Expected probe model $it, received $modelId"
+            }
+        }
+
         val s = stats[modelId]
         val first = s.seen == 0
         val latencyMs = latencyNs / 1_000_000.0
+        val deadlineMiss =
+            latencyNs > deadlineMs * 1_000_000L
 
         s.emaLatencyMs = if (first) {
             latencyMs
@@ -199,9 +291,7 @@ class ModelSelector(
             }
         }
 
-        s.recentMisses.addLast(
-            latencyNs > deadlineMs * 1_000_000L
-        )
+        s.recentMisses.addLast(deadlineMiss)
 
         while (s.recentMisses.size > dmrWindowSize) {
             s.recentMisses.removeFirst()
@@ -212,6 +302,43 @@ class ModelSelector(
         s.lastMeasuredFrame = completedFrames
 
         timeStatsCollector.record(modelId, latencyNs)
+
+        if (activeProbeModel == modelId) {
+            val withinBudget =
+                latencyMs <= deadlineMs * slack
+
+            if (!withinBudget) {
+                // Включая диапазон 45–50 мс:
+                // дедлайн ещё не пропущен, но запаса недостаточно.
+                finishRecoverySeries(
+                    modelId = modelId,
+                    successful = false
+                )
+            } else {
+                probeSuccessCount++
+
+                if (probeSuccessCount >= recoverySuccessFrames) {
+                    // Пять успешных кадров очищают окно от старого
+                    // пропуска. EMA задержки также должна подходить.
+                    finishRecoverySeries(
+                        modelId = modelId,
+                        successful = isFeasible(modelId)
+                    )
+                }
+            }
+
+            return
+        }
+
+        // После пропуска обычного кадра даём модели время
+        // до следующей серии восстановления.
+        if (initializationFinished && deadlineMiss) {
+            val state = recovery[modelId]
+            state.nextCheckFrame = maxOf(
+                state.nextCheckFrame,
+                completedFrames + state.intervalFrames
+            )
+        }
     }
 
     private fun isFeasible(modelId: Int): Boolean {
