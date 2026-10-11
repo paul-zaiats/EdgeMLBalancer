@@ -12,7 +12,9 @@ import android.os.BatteryManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.Gravity
 import android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+import android.widget.FrameLayout.LayoutParams
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
@@ -122,13 +124,32 @@ class BatteryMonitor(private val context: Context, private val listener: Battery
 class MainActivity : AppCompatActivity() {
 
     private lateinit var navController: NavController
+    private lateinit var experimentLamp: ExperimentStatusLamp
+
+    fun showExperimentState(state: ExperimentState) {
+        if (::experimentLamp.isInitialized) experimentLamp.show(state)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         window.addFlags(FLAG_KEEP_SCREEN_ON)
+        val content = findViewById<android.widget.FrameLayout>(android.R.id.content)
+        experimentLamp = ExperimentStatusLamp(this)
+        val margin = (16 * resources.displayMetrics.density).toInt()
+        content.addView(
+            experimentLamp.view, LayoutParams(
+                LayoutParams.WRAP_CONTENT,
+                LayoutParams.WRAP_CONTENT,
+                Gravity.TOP or Gravity.END
+            ).apply { topMargin = margin; rightMargin = margin })
         val navHostFragment =
             supportFragmentManager.findFragmentById(R.id.fragment_container) as NavHostFragment
         navController = navHostFragment.navController
+    }
+
+    override fun onDestroy() {
+        if (::experimentLamp.isInitialized) experimentLamp.close()
+        super.onDestroy()
     }
 }

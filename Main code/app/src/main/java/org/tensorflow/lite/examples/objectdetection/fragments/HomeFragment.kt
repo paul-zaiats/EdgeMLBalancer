@@ -7,8 +7,10 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import org.tensorflow.lite.examples.objectdetection.CocoHelper
+import org.tensorflow.lite.examples.objectdetection.MainActivity
 import org.tensorflow.lite.examples.objectdetection.R
 import org.tensorflow.lite.examples.objectdetection.databinding.FragmentHomeBinding
+import java.lang.ref.WeakReference
 
 class HomeFragment : Fragment() {
 
@@ -32,7 +34,14 @@ class HomeFragment : Fragment() {
         }
 
         binding.scanImagesButton.setOnClickListener {
-            CocoHelper(requireContext()).scanImages()
+            val activityRef = WeakReference(requireActivity() as MainActivity)
+
+            CocoHelper(
+                context = requireContext(),
+                onStateChanged = { state ->
+                    activityRef.get()?.showExperimentState(state)
+                }
+            ).scanImages()
         }
     }
 

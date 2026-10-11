@@ -13,7 +13,11 @@ import java.io.File
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 
-class CocoHelper(context: Context, private val config: ExperimentConfig = ExperimentConfig()) {
+class CocoHelper(
+    context: Context,
+    private val config: ExperimentConfig = ExperimentConfig(),
+    private val onStateChanged: ((ExperimentState) -> Unit)? = null
+) {
     private val app = context.applicationContext
     @Volatile
     private var worker: Thread? = null
@@ -21,7 +25,7 @@ class CocoHelper(context: Context, private val config: ExperimentConfig = Experi
         if (!busy.compareAndSet(false, true)) return
         worker = Thread({
             try {
-                execute()
+                executeWithStatus()
             } catch (e: Exception) {
                 Log.e("CocoExperiment", "Campaign failed", e)
             } finally {
@@ -38,9 +42,27 @@ class CocoHelper(context: Context, private val config: ExperimentConfig = Experi
         check(busy.compareAndSet(false, true)) { "Another campaign is running" }
         worker = Thread.currentThread()
         try {
-            execute()
+            executeWithStatus()
         } finally {
             worker = null; busy.set(false)
+        }
+    }
+
+    private fun emitState(state: ExperimentState) {
+        try {
+            onStateChanged?.invoke(state)
+        } catch (e: Exception) {
+            Log.w("CocoExperiment", "Status callback failed", e)
+        }
+    }
+
+    private fun executeWithStatus() {
+        try {
+            execute()
+            emitState(ExperimentState.FINISHED)
+        } catch (e: Exception) {
+            emitState(if (e is InterruptedException) ExperimentState.CANCELLED else ExperimentState.FAILED)
+            throw e
         }
     }
 
@@ -107,6 +129,7 @@ class CocoHelper(context: Context, private val config: ExperimentConfig = Experi
             ThermalSampler(app).use { thermal ->
                 for (job in jobs) {
                     checkCancellation(); coolDown(thermal)
+                    emitState(ExperimentState.RUN)
                     val id = "r${job.repeatId}_${job.scenario}_m${job.modelId}_${UUID.randomUUID()}"
                     val dir = File(root, id); check(dir.mkdirs())
                     val run = JSONObject().put("runId", id).put("status", "running")
@@ -136,6 +159,7 @@ class CocoHelper(context: Context, private val config: ExperimentConfig = Experi
     }
 
     private fun coolDown(thermal: ThermalSampler) {
+        emitState(ExperimentState.COOLDOWN)
         val start = SystemClock.elapsedRealtime();
         var stableSince: Long? = null
         var lastProgressMs = 0L
