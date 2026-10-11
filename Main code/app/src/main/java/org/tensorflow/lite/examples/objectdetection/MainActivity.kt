@@ -1,30 +1,21 @@
 package org.tensorflow.lite.examples.objectdetection
 
+//import androidx.navigation.fragment.NavHostFragment
+//import android.widget.TextView
+//import java.io.File
+//import java.io.FileWriter
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import android.os.Bundle
-import android.os.Debug
-import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
 import androidx.appcompat.app.AppCompatActivity
-//import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
-//import android.widget.TextView
-//import java.io.File
-//import java.io.FileWriter
-import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.*
-import android.widget.ImageView
-import android.widget.TextView
-import com.github.mikephil.charting.charts.LineChart
-import java.io.File
-import java.io.FileWriter
 import java.io.RandomAccessFile
 import kotlin.math.max
 
@@ -135,8 +126,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        val navHostFragment = supportFragmentManager.findFragmentById(R.id.fragment_container) as NavHostFragment
+        window.addFlags(FLAG_KEEP_SCREEN_ON)
+        val navHostFragment =
+            supportFragmentManager.findFragmentById(R.id.fragment_container) as NavHostFragment
         navController = navHostFragment.navController
     }
 }

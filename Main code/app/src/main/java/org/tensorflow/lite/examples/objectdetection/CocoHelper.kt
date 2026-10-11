@@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class CocoHelper(context: Context, private val config: ExperimentConfig = ExperimentConfig()) {
     private val app = context.applicationContext
-
     @Volatile
     private var worker: Thread? = null
     fun scanImages() {
@@ -256,9 +255,16 @@ class CocoHelper(context: Context, private val config: ExperimentConfig = Experi
                     metadata.put("startThermalStatus", thermal.latest?.thermalStatus)
                     val start = SystemClock.elapsedRealtimeNanos()
                     if (job.scenario == "dynamic") load.startDynamic(start)
+                    val legacyId = id.substringAfterLast('_')
+                    val mode = if (job.modelId == 999) "hybrid" else "static"
+                    val cocoName = "coco_${legacyId}_${job.scenario}_${mode}_m${job.modelId}.json"
+                    val timelyName =
+                        "coco_${legacyId}_${job.scenario}_${mode}_m${job.modelId}_timely.json"
+                    metadata.put("cocoFile", cocoName).put("timelyCocoFile", timelyName)
                     Predictions(
-                        File(dir, "predictions.json"), File(dir, "timely_predictions.json"),
-                        File(dir, "prediction_frames.jsonl"), config
+                        File(dir, cocoName),
+                        File(dir, timelyName),
+                        config
                     ).use { predictions ->
                         ExperimentCsv(File(dir, "frames.csv")).use { csv ->
                             var index = 0
@@ -319,18 +325,6 @@ class CocoHelper(context: Context, private val config: ExperimentConfig = Experi
                             JSONArray(predictions.evaluatedImageIds).toString()
                         )
                     }
-                    // Retain the original coco_<uuid>_<scenario>_<mode>_m<model>.json convention.
-                    val legacyId = id.substringAfterLast('_')
-                    val mode = if (job.modelId == 999) "hybrid" else "static"
-                    val cocoName = "coco_${legacyId}_${job.scenario}_${mode}_m${job.modelId}.json"
-                    File(dir, "predictions.json").copyTo(File(dir, cocoName), overwrite = true)
-                    val timelyName =
-                        "coco_${legacyId}_${job.scenario}_${mode}_m${job.modelId}_timely.json"
-                    File(dir, "timely_predictions.json").copyTo(
-                        File(dir, timelyName),
-                        overwrite = true
-                    )
-                    metadata.put("cocoFile", cocoName).put("timelyCocoFile", timelyName)
                     inference.writeTo(File(dir, "inference_stats.csv")); response.writeTo(
                     File(
                         dir,
@@ -436,12 +430,11 @@ class CocoHelper(context: Context, private val config: ExperimentConfig = Experi
 }
 
 private class Predictions(
-    all: File, timely: File, frames: File,
+    all: File, timely: File,
     private val config: ExperimentConfig
 ) : Closeable {
     private val a = all.bufferedWriter();
-    private val t = timely.bufferedWriter();
-    private val f = frames.bufferedWriter()
+    private val t = timely.bufferedWriter()
     private var firstA = true;
     private var firstT = true
     val evaluatedImageIds = mutableListOf<Int>()
@@ -461,13 +454,13 @@ private class Predictions(
         onTime: Boolean
     ) {
         // Export one observation per image, including empty/late frames in the GT ID list.
-        // Later dataset passes remain in JSONL only, to avoid duplicate COCO detections.
+        // Later dataset passes are timed in CSV but not exported as duplicate COCO detections.
         val exportCoco = pass == 0
         if (exportCoco) {
             check(exportedImageIds.add(id)) { "Duplicate image in first dataset pass: $id" }
             evaluatedImageIds.add(id)
         }
-        val detections = JSONArray()
+        if (!exportCoco) return
         r.results.forEach { d ->
             val c = d.categories.maxByOrNull { it.score } ?: return@forEach
             val map = config.categoryMaps[model]
@@ -484,7 +477,6 @@ private class Predictions(
             val item =
                 JSONObject().put("image_id", id).put("category_id", category).put("score", c.score)
                     .put("bbox", JSONArray().put(left).put(top).put(right - left).put(bottom - top))
-            detections.put(item)
             if (exportCoco) {
                 if (!firstA) a.write(","); firstA = false; a.write(item.toString())
                 if (onTime) {
@@ -492,14 +484,9 @@ private class Predictions(
                 }
             }
         }
-        f.appendLine(
-            JSONObject().put("image_id", id).put("frameIndex", index).put("datasetPass", pass)
-                .put("modelId", model).put("onTime", onTime).put("detections", detections)
-                .toString()
-        )
     }
 
     override fun close() {
-        a.write("]"); t.write("]"); a.close(); t.close(); f.close()
+        a.write("]"); t.write("]"); a.close(); t.close()
     }
 }
