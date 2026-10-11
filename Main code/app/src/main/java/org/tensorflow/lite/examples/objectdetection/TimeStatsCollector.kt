@@ -1,122 +1,81 @@
 package org.tensorflow.lite.examples.objectdetection
 
 import android.content.Context
-import android.util.Log
 import org.HdrHistogram.Histogram
 import java.io.File
-import java.io.FileWriter
-import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.concurrent.TimeUnit
+import java.util.IdentityHashMap
 
+/** Histogram percentiles are approximate; misses/mean/max use original nanoseconds. */
 class TimeStatsCollector(private val context: Context, private val deadlineNs: Long) {
-
-    private var logFile: File? = null
-
-    val lowestDiscernibleNs = 1_000L // 1 µs in ns
-    val highestTrackableNs = TimeUnit.MINUTES.toNanos(1)
+    val lowestDiscernibleNs = 1_000L
+    val highestTrackableNs = 60_000_000_000L
     val sigDigits = 3
+    private fun histogram() = Histogram(lowestDiscernibleNs, highestTrackableNs, sigDigits)
+    val histHybrid = histogram()
+    val histAll = histogram()
+    val histMV = histogram()
+    val histE0 = histogram()
+    val histE1 = histogram()
+    val histE2 = histogram()
+    val modelIndexMapping =
+        mapOf(999 to histHybrid, 0 to histMV, 1 to histE0, 2 to histE1, 3 to histE2)
 
-    val histHybrid = Histogram(lowestDiscernibleNs, highestTrackableNs, sigDigits)
-    val histAll = Histogram(lowestDiscernibleNs, highestTrackableNs, sigDigits)
-    val histMV = Histogram(lowestDiscernibleNs, highestTrackableNs, sigDigits)
-    val histE0 = Histogram(lowestDiscernibleNs, highestTrackableNs, sigDigits)
-    val histE1 = Histogram(lowestDiscernibleNs, highestTrackableNs, sigDigits)
-    val histE2 = Histogram(lowestDiscernibleNs, highestTrackableNs, sigDigits)
-
-    val modelIndexMapping: Map<Int, Histogram> = mapOf(
-        999 to histHybrid,
-        0 to histMV,
-        1 to histE0,
-        2 to histE1,
-        3 to histE2
+    private data class Exact(
+        var count: Long = 0, var misses: Long = 0,
+        var sum: Double = 0.0, var maximum: Long = 0
     )
 
+    private val exact = IdentityHashMap<Histogram, Exact>().apply {
+        (modelIndexMapping.values + histAll).forEach { put(it, Exact()) }
+    }
+
     fun record(modelIndex: Int, latencyNano: Long) {
-        modelIndexMapping[modelIndex]!!.recordValue(latencyNano)
-        histAll.recordValue(latencyNano)
-    }
-
-    fun logResults(fileName: String) {
-        createLogFile(fileName)
-        val timestamp = getCurrentTimestamp()
-        Log.d("StatsHelper", "Log timings")
-
-        listOf(histMV, histE0, histE1, histE2, histAll).forEach {
-            val s = getStats(it)
-
-            var modelName: String
-            if (it === histMV) {
-                modelName = "MobileNet V1"
-            } else if (it === histE0) {
-                modelName = "EfficientDet Lite0"
-            } else if (it === histE1) {
-                modelName = "EfficientDet Lite1"
-            } else if (it === histE2) {
-                modelName = "EfficientDet Lite2"
-            } else {
-                modelName = "All Models"
-            }
-            val logMessage =
-                "$timestamp,${modelName},${it.totalCount},${s.avgNs},${s.median},${s.p95},${s.p99},${s.p999},${s.dmr},${s.wcet}" // Updated log message
-            writeToLogFile(logMessage)
+        require(latencyNano in 0..highestTrackableNs)
+        val model = requireNotNull(modelIndexMapping[modelIndex])
+        listOf(model, histAll).forEach { h ->
+            h.recordValue(latencyNano)
+            val e = exact.getValue(h)
+            e.count++; if (latencyNano > deadlineNs) e.misses++
+            e.sum += latencyNano; e.maximum = maxOf(e.maximum, latencyNano)
         }
     }
 
-    private fun getCurrentTimestamp(): String {
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-        return dateFormat.format(Date())
-    }
-
-    private fun createLogFile(fileName: String) {
-        val directory = context.getExternalFilesDir(null)
-
-        logFile = if (directory != null) {
-            File(directory, fileName)
-        } else {
-            File(context.filesDir, fileName)
-        }
-
-        writeToLogFile("Timestamp,SelectedModel,TotalCount,AverageLatency,MedianLatency,p95Latency,p99Latency,p999Latency,DeadlineMissRatio,WorstCaseExecutionTime")
-    }
-
-    private fun writeToLogFile(message: String) {
-        logFile?.let {
-            try {
-                FileWriter(it, true).use { writer ->
-                    writer.append(message)
-                    writer.appendLine()
-                }
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
-        }
+    fun reset() {
+        exact.forEach { (h, _) -> h.reset(); exact[h] = Exact() }
     }
 
     fun getStats(hist: Histogram): Stats {
-        val avgNs = hist.mean.toLong()
-        val median = hist.getValueAtPercentile(50.0)
-        val p95 = hist.getValueAtPercentile(95.0)
-        val p99 = hist.getValueAtPercentile(99.0)
-        val p999 = hist.getValueAtPercentile(99.9)
-        val wcet = hist.maxValue
-
-        val misses = hist.getCountBetweenValues(deadlineNs + 1, Long.MAX_VALUE)
-        val total = hist.totalCount
-        val dmr = misses.toDouble() / total.toDouble()
-
-        return Stats(avgNs, median, p95, p99, p999, wcet, dmr)
+        val e = exact.getValue(hist)
+        return Stats(
+            if (e.count == 0L) 0 else (e.sum / e.count).toLong(),
+            hist.getValueAtPercentile(50.0), hist.getValueAtPercentile(95.0),
+            hist.getValueAtPercentile(99.0), hist.getValueAtPercentile(99.9),
+            e.maximum, if (e.count == 0L) Double.NaN else e.misses.toDouble() / e.count
+        )
     }
 
+    fun writeTo(file: File) {
+        file.parentFile?.mkdirs()
+        file.bufferedWriter().use { w ->
+            w.appendLine("modelId,count,averageNs,p50Ns,p95Ns,p99Ns,p999Ns,maxObservedNs,misses,dmr,deadlineNs")
+            (modelIndexMapping.map { it.key.toString() to it.value } + ("all" to histAll)).forEach { (id, h) ->
+                val e = exact.getValue(h);
+                val s = getStats(h)
+                w.appendLine(
+                    listOf(
+                        id, e.count, s.avgNs, s.median, s.p95, s.p99, s.p999, s.wcet,
+                        e.misses, if (e.count == 0L) "" else s.dmr, deadlineNs
+                    ).joinToString(",")
+                )
+            }
+        }
+    }
+
+    fun logResults(fileName: String) =
+        writeTo(File(context.getExternalFilesDir(null) ?: context.filesDir, fileName))
+
     data class Stats(
-        val avgNs: Long,
-        val median: Long,
-        val p95: Long,
-        val p99: Long,
-        val p999: Long,
-        val wcet: Long,
-        val dmr: Double
+        val avgNs: Long, val median: Long, val p95: Long, val p99: Long,
+        val p999: Long, val wcet: Long, val dmr: Double
     )
 }

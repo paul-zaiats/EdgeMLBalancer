@@ -1,582 +1,484 @@
 package org.tensorflow.lite.examples.objectdetection
 
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.RectF
+import android.os.Build
 import android.os.SystemClock
 import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
-import org.tensorflow.lite.task.vision.detector.Detection
-import java.io.BufferedWriter
+import java.io.Closeable
 import java.io.File
-import java.io.FileWriter
 import java.util.UUID
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.math.max
-import kotlin.random.Random
 
-/**
- * Runs repeatable COCO validation experiments for the four bundled detectors.
- *
- * The button in HomeFragment already calls [scanImages]. It runs every
- * configured load scenario, static model baselines, and the hybrid selector.
- * Call this method from a background executor: image decoding and inference
- * are intentionally synchronous so that one run has a deterministic order.
- */
-class CocoHelper(context: Context) {
-
-    private val appContext = context.applicationContext
-    private val running = AtomicBoolean(false)
+class CocoHelper(context: Context, private val config: ExperimentConfig = ExperimentConfig()) {
+    private val app = context.applicationContext
 
     @Volatile
-    private var allDetections = JSONArray()
-
-    private val deadlineNs = 50_000_000L
-    private val warmupImageCount = 10
-    private val loadStabilizationMs = 5_000L
-
-    private data class LoadScenario(
-        val name: String,
-        val workers: Int,
-        val dutyCycle: Double
-    )
-
-    private val loadScenarios = listOf(
-        LoadScenario("idle", workers = 0, dutyCycle = 0.0),
-//        LoadScenario("cpu_w8_d75", workers = 8, dutyCycle = 0.75)
-    )
-
-    /** Starts the complete campaign away from the main/UI thread. */
+    private var worker: Thread? = null
     fun scanImages() {
-        Thread({
-            runCatching { runLoadExperiment() }
-                .onFailure { Log.e(TAG, "COCO experiment failed", it) }
-        }, "coco-experiment").apply {
-            isDaemon = true
-            start()
-        }
+        if (!busy.compareAndSet(false, true)) return
+        worker = Thread({
+            try {
+                execute()
+            } catch (e: Exception) {
+                Log.e("CocoExperiment", "Campaign failed", e)
+            } finally {
+                busy.set(false); worker = null
+            }
+        }, "coco-experiment").also { it.start() }
+    }
+
+    fun cancel() {
+        worker?.interrupt()
     }
 
     fun runLoadExperiment() {
-        check(running.compareAndSet(false, true)) { "A COCO experiment is already running" }
-        val cpuSampler = CpuUsageSampler()
-
+        check(busy.compareAndSet(false, true)) { "Another campaign is running" }
+        worker = Thread.currentThread()
         try {
-            val runId = UUID.randomUUID().toString()
-            val images = listCocoImages()
-            require(images.isNotEmpty()) { "No JPEG images found in $COCO_ASSET_DIR" }
-
-            val outputDir = appContext.getExternalFilesDir(null) ?: appContext.filesDir
-            val sampleFile = File(outputDir, "coco_samples_$runId.csv")
-            sampleFile.bufferedWriter().use { writer ->
-                writer.appendLine(
-                    "runId,scenario,mode,imageId,modelId,switched,workers,dutyCycle," +
-                            "cpuUsagePercent,inferenceNs,detectCallDurationNs,deadlineNs,deadlineMiss,confidence"
-                )
-
-                cpuSampler.start()
-                for (scenario in loadScenarios) {
-                    runScenario(
-                        runId = runId,
-                        scenario = scenario,
-                        images = images,
-                        writer = writer,
-                        cpuSampler = cpuSampler
-                    )
-                    writer.flush()
-                }
-            }
-            Log.i(TAG, "COCO experiment $runId completed; samples: ${sampleFile.absolutePath}")
+            execute()
         } finally {
-            cpuSampler.stop()
-            running.set(false)
+            worker = null; busy.set(false)
         }
     }
 
-    private fun runScenario(
-        runId: String,
-        scenario: LoadScenario,
-        images: List<String>,
-        writer: BufferedWriter,
-        cpuSampler: CpuUsageSampler
-    ) {
-        val generator = CpuLoadGenerator()
-        var activeScenario = scenario
-        try {
-            if (scenario.workers > 0) {
-                val workers = minOf(scenario.workers, Runtime.getRuntime().availableProcessors())
-                    .coerceAtLeast(1)
-                activeScenario = scenario.copy(workers = workers)
-                generator.start(
-                    workers = workers,
-                    dutyCycle = scenario.dutyCycle,
-                    periodMs = 100
-                )
-                Log.i(TAG, "Started ${scenario.name}: workers=$workers, duty=${scenario.dutyCycle}")
-            }
-            Thread.sleep(loadStabilizationMs)
-
-            ThermalSampler(appContext).use { thermalSampler ->
-                val phases = listOf<() -> Unit>(
-    //                { runStaticModels(runId, activeScenario, images, writer, cpuSampler, thermalSampler) },
-                    { runHybrid(runId, activeScenario, images, writer, cpuSampler, thermalSampler) }
-                )
-                phases.shuffled(Random("$runId:${scenario.name}".hashCode())).forEach { it() }
-            }
-        } finally {
-            generator.stop()
-        }
+    private fun checkCancellation() {
+        if (Thread.currentThread().isInterrupted) throw InterruptedException("Campaign cancelled")
     }
 
-    private fun runStaticModels(
-        runId: String,
-        scenario: LoadScenario,
-        images: List<String>,
-        writer: BufferedWriter,
-        cpuSampler: CpuUsageSampler,
-        thermalSampler: ThermalSampler
-    ) {
-        val outputDir = appContext.getExternalFilesDir(null)
-            ?: appContext.filesDir
-
-        // Одинаковый порядок моделей для всех сценариев одного запуска.
-        val modelOrder = MODEL_IDS.shuffled(
-            Random("$runId:static".hashCode())
+    private fun execute() {
+        val images = app.assets.list(config.assetDirectory).orEmpty()
+            .filter { it.endsWith(".jpg", true) }.sorted().map { "${config.assetDirectory}/$it" }
+        require(images.size == config.expectedImageCount) {
+            "Expected ${config.expectedImageCount} images, found ${images.size}"
+        }
+        val ids = images.map(::cocoImageIdFromFilename)
+        require(ids.toSet().size == ids.size) { "Duplicate image IDs" }
+        val campaign = UUID.randomUUID().toString()
+        val root = File(app.getExternalFilesDir(null) ?: app.filesDir, "experiments/$campaign")
+        check(root.mkdirs())
+        val manifest = JSONObject().put("campaignId", campaign).put("status", "running")
+            .put("seed", config.seed).put("repeats", config.repeats)
+            .put("deadlineNs", config.deadlineNs).put("numThreads", config.inferenceThreads)
+            .put("delegate", "CPU").put("scoreThreshold", 0.05).put("maxResults", 100)
+            .put("imageCount", images.size).put("modelQualityOrder", JSONArray(listOf(0, 1, 2, 3)))
+            .put("warmupFramesPerModel", config.warmupFrames)
+            .put("loadSettleMs", config.loadSettleMs)
+            .put("dynamicStageMs", config.dynamicStageMs).put("loadPeriodMs", config.loadPeriodMs)
+            .put("requestedWorkers", config.loadWorkers)
+            .put("availableProcessors", Runtime.getRuntime().availableProcessors())
+            .put("device", "${Build.MANUFACTURER} ${Build.MODEL}").put("sdk", Build.VERSION.SDK_INT)
+            .put("fingerprint", Build.FINGERPRINT).put("maxStartBatteryC", config.maxStartBatteryC)
+            .put("protocolVersion", "1.0")
+            .put("categoryMappingVerified", config.categoryMappingVerified)
+            .put(
+                "categoryMapping",
+                if (config.categoryMaps.isEmpty()) "unverified_index_plus_one" else "explicit"
+            )
+        val modelFiles = listOf(
+            "mobilenetv1.tflite", "efficientdet-lite0.tflite",
+            "efficientdet-lite1.tflite", "efficientdet-lite2.tflite"
         )
-
-        for (modelId in modelOrder) {
-            allDetections = JSONArray()
-            val helper = createDetector(modelId)
-
-            try {
-                warmUp(helper, images)
-
-                // Исключаем предсказания прогрева, если listener их сохранил.
-                allDetections = JSONArray()
-
-                val stats = TimeStatsCollector(appContext, deadlineNs)
-                val samplesFile = File(
-                    outputDir,
-                    "coco_frames_${runId}_${scenario.name}_static_m${modelId}.csv"
-                )
-
-                FrameCsvLogger(samplesFile).use { csv ->
-                    for ((frameIndex, assetName) in images.withIndex()) {
-                        val imageId = cocoImageIdFromFilename(assetName)
-                        val bitmap = loadImage(assetName)
-
-                        try {
-                            val cpuPercent =
-                                cpuSampler.latestPercent?.toDouble()
-
-                            val decision = SelectionDecision(
-                                modelId = modelId,
-                                switched = false,
-                                phase = SelectionPhase.NORMAL,
-                                reason = "fixed_model"
-                            )
-
-                            // Декодирование изображения в замер не входит.
-                            val thermalBeforeFrame = thermalSampler.latest
-                            val startedNs = SystemClock.elapsedRealtimeNanos()
-                            val (inferenceNs, confidence) =
-                                helper.detect(bitmap, 0, imageId)
-                            val finishedNs = SystemClock.elapsedRealtimeNanos()
-
-                            val callDurationNs = finishedNs - startedNs
-
-                            stats.record(modelId, inferenceNs)
-
-                            csv.record(
-                                runId = runId,
-                                scenario = scenario.name,
-                                frameIndex = frameIndex,
-                                imageId = imageId,
-                                mode = "static",
-                                decision = decision,
-                                targetDutyCycle = scenario.dutyCycle,
-                                workerCount = scenario.workers,
-                                frameStartElapsedNs = startedNs,
-                                selectionDurationNs = 0L,
-                                inferenceNs = inferenceNs,
-                                detectCallDurationNs = callDurationNs,
-                                responseDurationNs = callDurationNs,
-                                deadlineNs = deadlineNs,
-                                confidence = confidence,
-                                processCpuPercentOneCore = cpuPercent,
-                                thermal = thermalBeforeFrame
-                            )
-
-                            writeSample(
-                                writer,
-                                runId,
-                                scenario,
-                                "static",
-                                imageId,
-                                modelId,
-                                false,
-                                inferenceNs,
-                                callDurationNs,
-                                confidence,
-                                cpuPercent
-                            )
-                        } finally {
-                            bitmap.recycle()
-                        }
+        val hashes = JSONObject()
+        modelFiles.forEach { name ->
+            val digest = java.security.MessageDigest.getInstance("SHA-256")
+            app.assets.open(name).use { stream ->
+                val buffer = ByteArray(65536)
+                while (true) {
+                    val n = stream.read(buffer); if (n < 0) break; digest.update(buffer, 0, n)
+                }
+            }
+            hashes.put(name, digest.digest().joinToString("") { "%02x".format(it.toInt() and 255) })
+        }
+        manifest.put("modelSha256", hashes)
+        val jobs = config.jobs()
+        manifest.put("jobOrder", JSONArray(jobs.map {
+            JSONObject().put("repeat", it.repeatId)
+                .put("modelId", it.modelId).put("scenario", it.scenario)
+        }))
+        val completed = JSONArray(); manifest.put("runs", completed)
+        fun saveManifest() {
+            File(root, "manifest.json").writeText(manifest.toString(2))
+        }
+        saveManifest()
+        try {
+            ThermalSampler(app).use { thermal ->
+                for (job in jobs) {
+                    checkCancellation();
+                    coolDown(thermal);
+                    val id = "r${job.repeatId}_${job.scenario}_m${job.modelId}_${UUID.randomUUID()}"
+                    val dir = File(root, id); check(dir.mkdirs())
+                    val run = JSONObject().put("runId", id).put("status", "running")
+                        .put("repeat", job.repeatId).put("scenario", job.scenario)
+                        .put("modelId", job.modelId)
+                    completed.put(run); saveManifest()
+                    try {
+                        executeRun(job, id, dir, images, thermal, run); run.put(
+                            "status",
+                            "completed"
+                        )
+                    } catch (e: Exception) {
+                        run.put("status", if (e is InterruptedException) "cancelled" else "failed")
+                            .put("error", e.toString()); throw e
+                    } finally {
+                        File(dir, "run.json").writeText(run.toString(2)); saveManifest()
                     }
                 }
-
-                stats.logResults(
-                    "time_log_${runId}_${scenario.name}_static_m${modelId}.csv"
-                )
-                writePredictions(
-                    runId,
-                    scenario.name,
-                    "static",
-                    modelId,
-                    allDetections
-                )
-            } finally {
-                helper.clearObjectDetector()
-                allDetections = JSONArray()
             }
+            manifest.put("status", "completed")
+        } catch (e: Exception) {
+            manifest.put("status", if (e is InterruptedException) "cancelled" else "failed")
+                .put("error", e.toString()); throw e
+        } finally {
+            saveManifest(); Log.i("CocoExperiment", root.absolutePath)
         }
     }
 
-    private fun runHybrid(
-        runId: String,
-        scenario: LoadScenario,
-        images: List<String>,
-        writer: BufferedWriter,
-        cpuSampler: CpuUsageSampler,
-        thermalSampler: ThermalSampler
-    ) {
-        val outputDir = appContext.getExternalFilesDir(null)
-            ?: appContext.filesDir
+    private fun coolDown(thermal: ThermalSampler) {
+        val start = SystemClock.elapsedRealtime();
+        var stableSince: Long? = null
+        var lastProgressMs = 0L
 
-        val helper = createDetector(modelId = 0)
+        while (SystemClock.elapsedRealtime() - start < config.cooldownTimeoutMs) {
+            checkCancellation()
+            val now = SystemClock.elapsedRealtimeNanos();
+            val s = thermal.latest
+            val valid = s != null && now - s.sampledAtElapsedNs <= 2_500_000_000L &&
+                    s.batteryTemperatureC != null && s.batteryTemperatureC <= config.maxStartBatteryC &&
+                    s.thermalStatus == 0 //&& s.plugged == false
+            val nowMs = SystemClock.elapsedRealtime()
 
-        try {
-            allDetections = JSONArray()
+            if (nowMs - lastProgressMs >= 5_000L) {
+                lastProgressMs = nowMs
 
-            val selector = ModelSelector(
-                odh = helper,
-                deadlineMs = DEADLINE_MS,
-                cooldownFrames = 10,
-                recheckIntervalFrames = 20,
-                initialSamplesPerModel = 3
-            )
+                val stableSeconds = stableSince
+                    ?.let { (now - it) / 1_000_000_000L }
+                    ?: 0L
 
-            val samplesFile = File(
-                outputDir,
-                "coco_frames_${runId}_${scenario.name}_hybrid.csv"
-            )
-
-            val initializedModels = mutableSetOf<Int>()
-
-            // Одно изображение используется для прогрева всех моделей.
-            val warmupAsset = images.firstOrNull()
-
-            FrameCsvLogger(samplesFile).use { csv ->
-                for ((frameIndex, assetName) in images.withIndex()) {
-                    val imageId = cocoImageIdFromFilename(assetName)
-                    val bitmap = loadImage(assetName)
-
-                    try {
-                        val cpuPercent =
-                            cpuSampler.latestPercent?.toDouble()
-
-                        val thermalBeforeFrame = thermalSampler.latest
-                        val startedNs = SystemClock.elapsedRealtimeNanos()
-                        val decision = selector.chooseNextDecision()
-                        val selectionEndNs = SystemClock.elapsedRealtimeNanos()
-
-                        var warmupDurationNs = 0L
-
-                        if (
-                            decision.phase == SelectionPhase.INITIALIZATION &&
-                            decision.modelId !in initializedModels
-                        ) {
-                            val warmupStartedNs = SystemClock.elapsedRealtimeNanos()
-
-                            if (warmupAsset != null) {
-                                val warmupBitmap = loadImage(warmupAsset)
-
-                                // Защищаем предсказания уже измеренных кадров от записей прогрева.
-                                val measuredDetections = allDetections
-                                allDetections = JSONArray()
-
-                                try {
-                                    repeat(10) {
-                                        // imageId отсутствует: это прогрев, не оценочный кадр.
-                                        helper.detect(warmupBitmap, 0)
-                                    }
-                                } finally {
-                                    allDetections = measuredDetections
-                                    warmupBitmap.recycle()
-                                }
-                            }
-
-                            initializedModels.add(decision.modelId)
-                            warmupDurationNs =
-                                SystemClock.elapsedRealtimeNanos() - warmupStartedNs
-                        }
-
-                        // Отдельная граница: detectCallDurationNs не включает прогрев.
-                        val detectStartedNs = SystemClock.elapsedRealtimeNanos()
-
-                        val (inferenceNs, confidence) =
-                            helper.detect(bitmap, 0, imageId)
-
-                        val finishedNs = SystemClock.elapsedRealtimeNanos()
-
-                        val selectionDurationNs = selectionEndNs - startedNs
-                        val callDurationNs = finishedNs - detectStartedNs
-
-                        // Время ответа включает начальный прогрев.
-                        // Поэтому его стоимость остаётся видна в CSV.
-                        val responseDurationNs = finishedNs - startedNs
-
-                        selector.updateMetrics(
-                            modelId = decision.modelId,
-                            latencyNs = inferenceNs,
-                            avgConfThisFrame = confidence
-                        )
-
-                        csv.record(
-                            runId = runId,
-                            scenario = scenario.name,
-                            frameIndex = frameIndex,
-                            imageId = imageId,
-                            mode = "hybrid",
-                            decision = decision,
-                            targetDutyCycle = scenario.dutyCycle,
-                            workerCount = scenario.workers,
-                            frameStartElapsedNs = startedNs,
-                            selectionDurationNs = selectionDurationNs,
-                            inferenceNs = inferenceNs,
-                            detectCallDurationNs = callDurationNs,
-                            responseDurationNs = responseDurationNs,
-                            deadlineNs = deadlineNs,
-                            confidence = confidence,
-                            processCpuPercentOneCore = cpuPercent,
-                            warmupDurationNs = warmupDurationNs,
-                            thermal = thermalBeforeFrame
-                        )
-
-                        writeSample(
-                            writer,
-                            runId,
-                            scenario,
-                            "hybrid",
-                            imageId,
-                            decision.modelId,
-                            decision.switched,
-                            inferenceNs,
-                            callDurationNs,
-                            confidence,
-                            cpuPercent
-                        )
-                    } finally {
-                        bitmap.recycle()
-                    }
-                }
+                Log.i(
+                    "CocoExperiment",
+                    "COOLDOWN: waited=${(nowMs - start) / 1000}s, " +
+                            "battery=${s?.batteryTemperatureC}°C " +
+                            "(target<=${config.maxStartBatteryC}°C), " +
+                            "thermal=${s?.thermalStatus}, plugged=${s?.plugged}, " +
+                            "conditionsMet=$valid, stable=${stableSeconds}/5s"
+                )
             }
 
-            selector.timeStatsCollector.logResults(
-                "time_log_${runId}_${scenario.name}_hybrid_m${MODEL_HYBRID}.csv"
-            )
-            writePredictions(
-                runId,
-                scenario.name,
-                "hybrid",
-                MODEL_HYBRID,
-                allDetections
-            )
+            if (valid) {
+                if (stableSince == null) stableSince = now
+                if (now - requireNotNull(stableSince) >= 5_000_000_000L) {
+                    Log.i("CocoExperiment", "COOLDOWN complete: starting preparation")
+                    return
+                }
+            } else stableSince = null
+            Thread.sleep(500)
+        }
+        error("Cooling timeout: require fresh battery temperature <= ${config.maxStartBatteryC} C, thermal NONE, unplugged")
+    }
+
+    private fun executeRun(
+        job: ExperimentJob, id: String, dir: File, images: List<String>,
+        thermal: ThermalSampler, metadata: JSONObject
+    ) {
+        val inference = TimeStatsCollector(app, config.deadlineNs)
+        val response = TimeStatsCollector(app, config.deadlineNs)
+        val creationStart = SystemClock.elapsedRealtimeNanos()
+        val helper = ObjectDetectorHelper(
+            threshold = 0.05f, numThreads = config.inferenceThreads,
+            maxResults = 100, currentModel = if (job.modelId == 999) 0 else job.modelId,
+            context = app, objectDetectorListener = null, deadlineNs = config.deadlineNs
+        )
+        metadata.put("coldModelCreationNs", SystemClock.elapsedRealtimeNanos() - creationStart)
+        val selector =
+            if (job.modelId == 999) ModelSelector(helper, deadlineMs = config.deadlineMs) else null
+        try {
+            ExperimentLoadController(config, File(dir, "load_events.csv")).use { load ->
+                load.prepare(job.scenario); Thread.sleep(config.loadSettleMs)
+                ExperimentCpuSampler().use { cpu ->
+                    val prepared = SystemClock.elapsedRealtimeNanos()
+                    ExperimentCsv(File(dir, "startup.csv")).use { csv ->
+                        val warmed = mutableSetOf<Int>()
+                        if (selector == null) {
+                            repeat(config.warmupFrames) { n ->
+                                measure(
+                                    images[n % images.size], n, 0, job, id, helper,
+                                    SelectionDecision(
+                                        helper.currentModel,
+                                        false,
+                                        SelectionPhase.INITIALIZATION,
+                                        "warmup"
+                                    ),
+                                    0, prepared, "warmup", load, cpu, thermal, csv, null, null, null
+                                )
+                            }
+                        } else repeat(12) { n ->
+                            val choose = SystemClock.elapsedRealtimeNanos()
+                            val decision = selector.chooseNextDecision()
+                            val selectionNs = SystemClock.elapsedRealtimeNanos() - choose
+                            if (warmed.add(decision.modelId)) repeat(config.warmupFrames) { w ->
+                                measure(
+                                    images[w % images.size], w, 0, job, id, helper, decision, 0,
+                                    prepared, "warmup", load, cpu, thermal, csv, null, null, null
+                                )
+                            }
+                            val result = measure(
+                                images[n % images.size],
+                                n,
+                                0,
+                                job,
+                                id,
+                                helper,
+                                decision,
+                                selectionNs,
+                                prepared,
+                                "calibration",
+                                load,
+                                cpu,
+                                thermal,
+                                csv,
+                                null,
+                                null,
+                                null
+                            )
+                            selector.updateMetrics(
+                                decision.modelId,
+                                result.inferenceNs,
+                                result.confidence
+                            )
+                        }
+                    }
+                    selector?.timeStatsCollector?.reset()
+                    metadata.put("startupDurationNs", SystemClock.elapsedRealtimeNanos() - prepared)
+                    metadata.put("startBatteryTemperatureC", thermal.latest?.batteryTemperatureC)
+                    metadata.put("startThermalStatus", thermal.latest?.thermalStatus)
+                    val start = SystemClock.elapsedRealtimeNanos()
+                    if (job.scenario == "dynamic") load.startDynamic(start)
+                    Predictions(
+                        File(dir, "predictions.json"), File(dir, "timely_predictions.json"),
+                        File(dir, "prediction_frames.jsonl"), config, job.scenario == "dynamic"
+                    ).use { predictions ->
+                        ExperimentCsv(File(dir, "frames.csv")).use { csv ->
+                            var index = 0
+                            while (if (job.scenario == "dynamic") SystemClock.elapsedRealtimeNanos() - start <
+                                        config.dynamicStageMs * 4 * 1_000_000L else index < images.size
+                            ) {
+                                checkCancellation(); load.failure?.let {
+                                    throw IllegalStateException(
+                                        "Load scheduler failed",
+                                        it
+                                    )
+                                }
+                                measure(
+                                    images[index % images.size],
+                                    index,
+                                    index / images.size,
+                                    job,
+                                    id,
+                                    helper,
+                                    SelectionDecision(
+                                        helper.currentModel,
+                                        false,
+                                        SelectionPhase.NORMAL,
+                                        "static"
+                                    ),
+                                    0L,
+                                    start,
+                                    "measurement",
+                                    load,
+                                    cpu,
+                                    thermal,
+                                    csv,
+                                    inference,
+                                    response,
+                                    predictions,
+                                    selector
+                                )
+                                index++
+                            }
+                            load.failure?.let {
+                                throw IllegalStateException(
+                                    "Load scheduler failed",
+                                    it
+                                )
+                            }
+                            check(job.scenario != "dynamic" || load.state.step == 3) {
+                                "Dynamic load did not reach its final stage"
+                            }
+                            metadata.put("frames", index).put(
+                                "measurementDurationNs",
+                                SystemClock.elapsedRealtimeNanos() - start
+                            )
+                        }
+                        metadata.put("unverifiedCategoryCount", predictions.unverified)
+                    }
+                    File(
+                        dir,
+                        "evaluated_image_ids.json"
+                    ).writeText(JSONArray(images.map(::cocoImageIdFromFilename)).toString())
+                    inference.writeTo(File(dir, "inference_stats.csv")); response.writeTo(
+                    File(
+                        dir,
+                        "response_stats.csv"
+                    )
+                )
+                }
+            }
         } finally {
             helper.clearObjectDetector()
-            allDetections = JSONArray()
         }
     }
 
-    private fun warmUp(helper: ObjectDetectorHelper, images: List<String>) {
-        images.take(minOf(warmupImageCount, images.size)).forEach { assetName ->
-            val bitmap = loadImage(assetName)
-            try {
-                // Null imageId prevents warm-up outputs from entering the COCO prediction file.
-                helper.detect(bitmap, 0)
-            } finally {
-                bitmap.recycle()
-            }
+    private fun measure(
+        asset: String, index: Int, pass: Int, job: ExperimentJob, id: String,
+        helper: ObjectDetectorHelper, decision: SelectionDecision, selectionNs: Long,
+        runStart: Long, phase: String, load: ExperimentLoadController, cpu: ExperimentCpuSampler,
+        thermal: ThermalSampler, csv: ExperimentCsv, inference: TimeStatsCollector?,
+        response: TimeStatsCollector?, predictions: Predictions?, selector: ModelSelector? = null
+    ): ObjectDetectorHelper.BenchmarkResult {
+        checkCancellation()
+        val decodeStart = SystemClock.elapsedRealtimeNanos()
+        val bitmap = app.assets.open(asset).use { requireNotNull(BitmapFactory.decodeStream(it)) }
+        val decodeNs = SystemClock.elapsedRealtimeNanos() - decodeStart
+        try {
+            val start = SystemClock.elapsedRealtimeNanos();
+            val before = load.state
+            val c = cpu.latest;
+            val t = thermal.latest
+            val activeDecision = selector?.chooseNextDecision() ?: decision
+            val activeSelectionNs =
+                if (selector == null) selectionNs else SystemClock.elapsedRealtimeNanos() - start
+            val result = helper.detectForBenchmark(bitmap)
+            val end = SystemClock.elapsedRealtimeNanos();
+            val after = load.state
+            val responseNs = if (selector == null) selectionNs + end - start else end - start
+            inference?.record(activeDecision.modelId, result.inferenceNs)
+            response?.record(activeDecision.modelId, responseNs)
+            csv.row(
+                id,
+                job.repeatId,
+                job.scenario,
+                phase,
+                index,
+                cocoImageIdFromFilename(asset),
+                pass,
+                activeDecision.modelId,
+                activeDecision.phase.name,
+                activeDecision.reason,
+                activeDecision.switched,
+                activeDecision.emaLatencyMsBefore,
+                activeDecision.windowDMRBefore,
+                activeDecision.observationsBefore,
+                activeDecision.windowSamplesBefore,
+                start - runStart,
+                activeSelectionNs,
+                result.initializationNs,
+                result.preprocessingNs,
+                result.detectorCallNs,
+                result.inferenceNs,
+                responseNs,
+                decodeNs,
+                config.deadlineNs,
+                result.inferenceNs > config.deadlineNs,
+                responseNs > config.deadlineNs,
+                result.confidence,
+                before.step,
+                after.step,
+                before.duty,
+                before.workers,
+                before.step != after.step,
+                c?.percent,
+                c?.let { (start - it.atNs) / 1_000_000.0 },
+                t?.batteryTemperatureC,
+                t?.thermalStatus,
+                t?.plugged,
+                t?.let { (start - it.sampledAtElapsedNs) / 1_000_000.0 })
+            predictions?.write(
+                cocoImageIdFromFilename(asset),
+                index,
+                pass,
+                activeDecision.modelId,
+                result,
+                responseNs <= config.deadlineNs
+            )
+            selector?.updateMetrics(activeDecision.modelId, result.inferenceNs, result.confidence)
+            return result
+        } finally {
+            bitmap.recycle()
         }
     }
 
-    private fun createDetector(modelId: Int): ObjectDetectorHelper = ObjectDetectorHelper(
-        context = appContext,
-        threshold = SCORE_THRESHOLD,
-        maxResults = MAX_RESULTS,
-        currentModel = modelId,
-        deadlineNs = deadlineNs,
-        objectDetectorListener = object : ObjectDetectorHelper.DetectorListener {
-            override fun onError(error: String) {
-                Log.e(TAG, "Detector error: $error")
-            }
+    fun cocoImageIdFromFilename(path: String): Int =
+        path.substringAfterLast('/').substringBefore('.').toInt()
 
-            override fun onResults(
-                results: MutableList<Detection>?,
-                inferenceTime: Long,
-                imageHeight: Int,
-                imageWidth: Int,
-                imageId: Int?
-            ) {
-                // Warm-up calls have no image id and must not be included in predictions.
-                if (imageId == null) return
+    fun toCocoBbox(box: RectF): JSONArray = JSONArray().put(box.left.coerceAtLeast(0f))
+        .put(box.top.coerceAtLeast(0f)).put(box.width().coerceAtLeast(0f))
+        .put(box.height().coerceAtLeast(0f))
 
-                results.orEmpty().forEach { detection ->
-                    val category = detection.categories.maxByOrNull { it.score } ?: return@forEach
-                    val detectionJson = JSONObject().apply {
-                        put("image_id", imageId)
-                        // Keep the existing model-index mapping. Verify it against the labels
-                        // metadata before using these files for final COCOeval results.
-                        put("category_id", category.index + 1)
-                        put("bbox", toCocoBbox(detection.boundingBox))
-                        put("score", category.score)
-                    }
-                    allDetections.put(detectionJson)
+    private companion object {
+        val busy = AtomicBoolean(false)
+    }
+}
+
+private class Predictions(
+    all: File, timely: File, frames: File, private val config: ExperimentConfig,
+    private val dynamic: Boolean
+) : Closeable {
+    private val a = all.bufferedWriter();
+    private val t = timely.bufferedWriter();
+    private val f = frames.bufferedWriter()
+    private var firstA = true;
+    private var firstT = true
+    var unverified = 0L; private set
+
+    init {
+        a.write("["); t.write("[")
+    }
+
+    fun write(
+        id: Int,
+        index: Int,
+        pass: Int,
+        model: Int,
+        r: ObjectDetectorHelper.BenchmarkResult,
+        onTime: Boolean
+    ) {
+        val detections = JSONArray()
+        r.results.forEach { d ->
+            val c = d.categories.maxByOrNull { it.score } ?: return@forEach
+            val map = config.categoryMaps[model]
+            val category = if (map == null) {
+                unverified++; c.index + 1
+            } else
+                requireNotNull(map[c.index]) { "Missing category mapping: model=$model index=${c.index}" }
+            val b = d.boundingBox
+            val left = b.left.coerceIn(0f, r.imageWidth.toFloat());
+            val top = b.top.coerceIn(0f, r.imageHeight.toFloat())
+            val right = b.right.coerceIn(left, r.imageWidth.toFloat());
+            val bottom = b.bottom.coerceIn(top, r.imageHeight.toFloat())
+            if (right <= left || bottom <= top) return@forEach
+            val item =
+                JSONObject().put("image_id", id).put("category_id", category).put("score", c.score)
+                    .put("bbox", JSONArray().put(left).put(top).put(right - left).put(bottom - top))
+            detections.put(item)
+            if (!dynamic) {
+                if (!firstA) a.write(","); firstA = false; a.write(item.toString())
+                if (onTime) {
+                    if (!firstT) t.write(","); firstT = false; t.write(item.toString())
                 }
             }
         }
-    )
-
-    private fun writeSample(
-        writer: BufferedWriter,
-        runId: String,
-        scenario: LoadScenario,
-        mode: String,
-        imageId: Int,
-        modelId: Int,
-        switched: Boolean,
-        inferenceNs: Long,
-        callDurationNs: Long,
-        confidence: Double,
-        cpuPercent: Double?
-    ) {
-        val miss = inferenceNs > deadlineNs
-        writer.appendLine(
-            listOf(
-                runId,
-                scenario.name,
-                mode,
-                imageId,
-                modelId,
-                switched,
-                scenario.workers,
-                scenario.dutyCycle,
-                cpuPercent?.toString() ?: "",
-                inferenceNs,
-                callDurationNs,
-                deadlineNs,
-                miss,
-                confidence
-            ).joinToString(",")
+        f.appendLine(
+            JSONObject().put("image_id", id).put("frameIndex", index).put("datasetPass", pass)
+                .put("modelId", model).put("onTime", onTime).put("detections", detections)
+                .toString()
         )
     }
 
-    private fun writePredictions(
-        runId: String,
-        scenarioName: String,
-        mode: String,
-        modelId: Int,
-        detections: JSONArray
-    ) {
-        val directory = appContext.getExternalFilesDir(null) ?: appContext.filesDir
-        val file = File(directory, "coco_${runId}_${scenarioName}_${mode}_m$modelId.json")
-        FileWriter(file, false).buffered().use { it.write(detections.toString()) }
-        Log.i(TAG, "Wrote ${detections.length()} detections to ${file.absolutePath}")
-    }
-
-    private fun listCocoImages(): List<String> =
-        appContext.assets.list(COCO_ASSET_DIR)
-            ?.filter { it.endsWith(".jpg", ignoreCase = true) }
-            ?.sorted()
-            ?.map { "$COCO_ASSET_DIR/$it" }
-            .orEmpty()
-
-    fun cocoImageIdFromFilename(assetPath: String): Int {
-        val filename = assetPath.substringAfterLast('/')
-        return filename.substringBefore('.').trimStart('0').ifEmpty { "0" }.toInt()
-    }
-
-    fun toCocoBbox(box: RectF): JSONArray {
-        val x = max(0f, box.left)
-        val y = max(0f, box.top)
-        val width = max(0f, box.width())
-        val height = max(0f, box.height())
-        return JSONArray().put(x).put(y).put(width).put(height)
-    }
-
-    private fun loadImage(assetPath: String): Bitmap =
-        appContext.assets.open(assetPath).use { stream ->
-            requireNotNull(BitmapFactory.decodeStream(stream)) {
-                "Could not decode image asset: $assetPath"
-            }
-        }
-
-    /** Process CPU usage: 100% means one fully occupied core; may exceed 100%. */
-    private class CpuUsageSampler {
-        @Volatile
-        var latestPercent: Float? = null
-            private set
-
-        private var previousCpuMs = 0L
-        private var previousWallNs = 0L
-        private var scheduler: ScheduledExecutorService? = null
-
-        @Synchronized
-        fun start() {
-            check(scheduler == null) { "CPU sampler is already running" }
-            previousCpuMs = android.os.Process.getElapsedCpuTime()
-            previousWallNs = SystemClock.elapsedRealtimeNanos()
-            latestPercent = null
-            val executor = Executors.newSingleThreadScheduledExecutor { runnable ->
-                Thread(runnable, "coco-cpu-sampler").apply { isDaemon = true }
-            }
-            scheduler = executor
-            executor.scheduleWithFixedDelay({ sample() }, 1, 1, TimeUnit.SECONDS)
-        }
-
-        @Synchronized
-        fun stop() {
-            scheduler?.shutdownNow()
-            scheduler = null
-        }
-
-        private fun sample() {
-            val cpuMs = android.os.Process.getElapsedCpuTime()
-            val wallNs = SystemClock.elapsedRealtimeNanos()
-            val cpuDeltaMs = cpuMs - previousCpuMs
-            val wallDeltaNs = wallNs - previousWallNs
-            previousCpuMs = cpuMs
-            previousWallNs = wallNs
-            if (wallDeltaNs <= 0L || cpuDeltaMs < 0L) return
-
-            latestPercent =
-                (cpuDeltaMs.toDouble() * 1_000_000.0 / wallDeltaNs * 100.0).toFloat()
-        }
-    }
-
-    private companion object {
-        const val TAG = "CocoHelper"
-        const val COCO_ASSET_DIR = "val2017"
-        const val SCORE_THRESHOLD = 0.05f
-        const val MAX_RESULTS = 100
-        const val DEADLINE_MS = 50
-        const val MODEL_HYBRID = 999
-        val MODEL_IDS = 0..3
+    override fun close() {
+        a.write("]"); t.write("]"); a.close(); t.close(); f.close()
     }
 }

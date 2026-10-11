@@ -10,6 +10,14 @@ class CpuLoadGenerator {
     @Volatile
     private var executor: ExecutorService? = null
 
+    @Volatile
+    private var currentDuty = 0.0
+
+    fun setDutyCycle(duty: Double) {
+        require(duty in 0.0..1.0)
+        currentDuty = duty
+    }
+
     // Не даёт оптимизатору удалить вычисления как бесполезные.
     @Volatile
     private var resultSink = 0L
@@ -29,7 +37,7 @@ class CpuLoadGenerator {
         executor = pool
 
         val periodNs = periodMs * 1_000_000L
-        val busyNs = (periodNs * dutyCycle).toLong()
+        currentDuty = dutyCycle
 
         repeat(workers) { workerId ->
             pool.execute {
@@ -38,7 +46,7 @@ class CpuLoadGenerator {
 
                 while (!thread.isInterrupted) {
                     val cycleStart = SystemClock.elapsedRealtimeNanos()
-                    val busyUntil = cycleStart + busyNs
+                    val busyUntil = cycleStart + (periodNs * currentDuty).toLong()
 
                     while (!thread.isInterrupted &&
                         SystemClock.elapsedRealtimeNanos() < busyUntil
@@ -63,8 +71,21 @@ class CpuLoadGenerator {
     @Synchronized
     fun stop() {
         val pool = executor ?: return
-        executor = null
         pool.shutdownNow()
-        pool.awaitTermination(2, TimeUnit.SECONDS)
+        val until = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
+        var interrupted = false
+        try {
+            while (!pool.isTerminated && System.nanoTime() < until) {
+                try {
+                    pool.awaitTermination(100, TimeUnit.MILLISECONDS)
+                } catch (_: InterruptedException) {
+                    interrupted = true
+                }
+            }
+            check(pool.isTerminated) { "CPU workers did not stop" }
+            executor = null
+        } finally {
+            if (interrupted) Thread.currentThread().interrupt()
+        }
     }
 }

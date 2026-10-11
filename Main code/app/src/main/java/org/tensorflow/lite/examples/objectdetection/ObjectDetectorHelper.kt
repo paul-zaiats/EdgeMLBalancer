@@ -22,21 +22,20 @@ import android.util.Log
 import org.tensorflow.lite.gpu.CompatibilityList
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
-import org.tensorflow.lite.support.image.ops.ResizeWithCropOrPadOp
 import org.tensorflow.lite.support.image.ops.Rot90Op
 import org.tensorflow.lite.task.core.BaseOptions
 import org.tensorflow.lite.task.vision.detector.Detection
 import org.tensorflow.lite.task.vision.detector.ObjectDetector
 
 class ObjectDetectorHelper(
-  var threshold: Float = 0.3f,
-  var numThreads: Int = 2,
-  var maxResults: Int = 3,
-  var currentDelegate: Int = 0,
-  var currentModel: Int = 0,
-  val context: Context,
-  val objectDetectorListener: DetectorListener?,
-  val deadlineNs: Long = 35_000_000
+    var threshold: Float = 0.3f,
+    var numThreads: Int = 2,
+    var maxResults: Int = 3,
+    var currentDelegate: Int = 0,
+    var currentModel: Int = 0,
+    val context: Context,
+    val objectDetectorListener: DetectorListener?,
+    val deadlineNs: Long = 35_000_000
 ) {
 
     // For this example this needs to be a var so it can be reset on changes. If the ObjectDetector
@@ -48,6 +47,7 @@ class ObjectDetectorHelper(
     }
 
     fun clearObjectDetector() {
+        objectDetector?.close()
         objectDetector = null
     }
 
@@ -58,8 +58,7 @@ class ObjectDetectorHelper(
     fun setupObjectDetector() {
         // Create the base options for the detector using specifies max results and score threshold
         val optionsBuilder =
-            ObjectDetector.ObjectDetectorOptions.builder()
-                .setScoreThreshold(threshold)
+            ObjectDetector.ObjectDetectorOptions.builder().setScoreThreshold(threshold)
                 .setMaxResults(maxResults)
 
         // Set general detection options, including number of used threads
@@ -70,6 +69,7 @@ class ObjectDetectorHelper(
             DELEGATE_CPU -> {
                 // Default
             }
+
             DELEGATE_GPU -> {
                 if (CompatibilityList().isDelegateSupportedOnThisDevice) {
                     baseOptionsBuilder.useGpu()
@@ -77,6 +77,7 @@ class ObjectDetectorHelper(
                     objectDetectorListener?.onError("GPU is not supported on this device")
                 }
             }
+
             DELEGATE_NNAPI -> {
                 baseOptionsBuilder.useNnapi()
             }
@@ -84,14 +85,13 @@ class ObjectDetectorHelper(
 
         optionsBuilder.setBaseOptions(baseOptionsBuilder.build())
 
-        val modelName =
-            when (currentModel) {
-                MODEL_MOBILENETV1 -> "mobilenetv1.tflite"
-                MODEL_EFFICIENTDETV0 -> "efficientdet-lite0.tflite"
-                MODEL_EFFICIENTDETV1 -> "efficientdet-lite1.tflite"
-                MODEL_EFFICIENTDETV2 -> "efficientdet-lite2.tflite"
-                else -> "mobilenetv1.tflite"
-            }
+        val modelName = when (currentModel) {
+            MODEL_MOBILENETV1 -> "mobilenetv1.tflite"
+            MODEL_EFFICIENTDETV0 -> "efficientdet-lite0.tflite"
+            MODEL_EFFICIENTDETV1 -> "efficientdet-lite1.tflite"
+            MODEL_EFFICIENTDETV2 -> "efficientdet-lite2.tflite"
+            else -> "mobilenetv1.tflite"
+        }
 
         try {
             objectDetector =
@@ -110,63 +110,61 @@ class ObjectDetectorHelper(
         }
     }
 
+    data class BenchmarkResult(
+        val results: MutableList<Detection>,
+        val inferenceNs: Long,
+        val initializationNs: Long,
+        val preprocessingNs: Long,
+        val detectorCallNs: Long,
+        val confidence: Double,
+        val imageHeight: Int,
+        val imageWidth: Int
+    )
+
+    // No listener/JSON/CSV inside the benchmark timing boundary.
+    fun detectForBenchmark(image: Bitmap, imageRotation: Int = 0): BenchmarkResult {
+        val initStart = SystemClock.elapsedRealtimeNanos()
+        val neededInitialization = objectDetector == null
+        if (neededInitialization) setupObjectDetector()
+        val initializationNs =
+            if (neededInitialization) SystemClock.elapsedRealtimeNanos() - initStart else 0L
+        val detector = checkNotNull(objectDetector) { "Model initialization failed: $currentModel" }
+        val start = SystemClock.elapsedRealtimeNanos()
+        val processor = ImageProcessor.Builder().add(Rot90Op(-imageRotation / 90)).build()
+        val input = processor.process(TensorImage.fromBitmap(image))
+        val callStart = SystemClock.elapsedRealtimeNanos()
+        val results = detector.detect(input)
+        val end = SystemClock.elapsedRealtimeNanos()
+        val confidence = results.mapNotNull { it.categories.maxByOrNull { c -> c.score }?.score }
+            .takeIf { it.isNotEmpty() }?.average() ?: 0.0
+        return BenchmarkResult(
+            results,
+            end - start,
+            initializationNs,
+            callStart - start,
+            end - callStart,
+            confidence,
+            input.height,
+            input.width
+        )
+    }
+
     fun detect(image: Bitmap, imageRotation: Int, imageId: Int? = null): Pair<Long, Double> {
-        if (objectDetector == null) {
-            setupObjectDetector()
-        }
-
-        // Inference time is the difference between the system time at the start and finish of the
-        // process
-        var inferenceTime = SystemClock.elapsedRealtimeNanos()
-
-
-        val modelInputWidth = 300
-        val modelInputHeight = 300
-
-        // Create preprocessor for the image.
-        // See https://www.tensorflow.org/lite/inference_with_metadata/
-        //            lite_support#imageprocessor_architecture
-        val imageProcessor =
-            ImageProcessor.Builder()
-                .add(Rot90Op(-imageRotation / 90))
-//                .add(ResizeWithCropOrPadOp(modelInputHeight, modelInputWidth))
-                .build()
-
-        // Preprocess the image and convert it into a TensorImage for detection.
-        val tensorImage = imageProcessor.process(TensorImage.fromBitmap(image))
-
-        val results = objectDetector?.detect(tensorImage)
-        inferenceTime = SystemClock.elapsedRealtimeNanos() - inferenceTime
-        val avgConf: Double = results!!
-            .mapNotNull { it.categories.maxByOrNull { c -> c.score }?.score }
-            .takeIf { it.isNotEmpty() }
-            ?.average()
-            ?: 0.0
-
-        if (imageId == null) {
-            objectDetectorListener?.onResults(
-                results,
-                inferenceTime,
-                tensorImage.height,
-                tensorImage.width)
-        } else {
-            objectDetectorListener?.onResults(results,
-                inferenceTime,
-                tensorImage.height,
-                tensorImage.width,
-                imageId)
-        }
-        return Pair(inferenceTime, avgConf)
+        val result = detectForBenchmark(image, imageRotation)
+        objectDetectorListener?.onResults(
+            result.results, result.inferenceNs, result.imageHeight, result.imageWidth, imageId
+        )
+        return result.inferenceNs to result.confidence
     }
 
     interface DetectorListener {
         fun onError(error: String)
         fun onResults(
-          results: MutableList<Detection>?,
-          inferenceTime: Long,
-          imageHeight: Int,
-          imageWidth: Int,
-          imageId: Int? = null
+            results: MutableList<Detection>?,
+            inferenceTime: Long,
+            imageHeight: Int,
+            imageWidth: Int,
+            imageId: Int? = null
         )
     }
 
